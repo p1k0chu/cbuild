@@ -6,8 +6,8 @@ API might change often because right now its not good enough.
 
 # License
 
-This library is licensed with LGPL-3.0-or-later. see COPYING.LGPLv3
-and COPYING.GPLv3 for full text of the licenses.
+This library is licensed with LGPL-3.0-or-later. see `LICENSE` and
+`COPYING.LESSER` for full text of the licenses.
 
 # Usage
 
