@@ -108,20 +108,30 @@ you can update mtime of `build.c` and run `./build`
 All compiler's commands, stdout and stderr are printed like usual,
 emacs' parsing doesn't break.
 
+You can use the `bootstrap.sh` script in the root of the project to,
+well, bootstrap your build program. Instead of long and painful gcc
+command the script compiles your build program for you, and generates
+a header with a macro `CBUILD_SELFCOMPILE_FLAGS`, which you should
+pass to `cbuild_recompile_myself` like this:
+
+```c
+cbuild_recompile_myself(__FILE__, argv, "-Wall", CBUILD_SELFCOMPILE_FLAGS, NULL);
+```
+
 ---
 
 Final program example (all error handling omitted for brevity):
 
 ```c
+#include "build.h"
+
 #include <cbuild/cbuild.h>
 #include <wait.h>
 
 int main(int argc, char **argv) {
     cbuild_recompile_myself(__FILE__,
                             argv,
-                            "-Llib/cbuild",
-                            "-lcbuild",
-                            "-Ilib/cbuild/include",
+							CBUILD_SELFCOMPILE_FLAGS,
                             NULL);
 
     cbuild_obj_t *foo_obj = cbuild_obj_create("foo.c", "-std=gnu23", "-Wall", "-Wextra", NULL);
