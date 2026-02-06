@@ -11,7 +11,8 @@ and COPYING.GPLv3 for full text of the licenses.
 
 # Usage
 
-TLDR: full example (without error handling) at the bottom
+TLDR: full example (without error handling) at the bottom. also see
+`build.c` for example usage.
 
 First, you need to compile this library as a static lib. Clone the
 repository and run `make`, this creates a `libcbuild.a` file in
@@ -91,9 +92,9 @@ Now, if you run build, it should work.
 It can also recompile itself, when its source file is newer than
 executable. To do so, you need to call `cbuild_recompile_myself` on
 the top of your `main(...)`. It also takes cflags and ldflags combined
-as varargs. it, at minimum, flags to link against `cbuild` library
-(just like in the command above). You can pass any other flags, they
-should work.
+as varargs. It needs, at minimum, flags to link against `cbuild`
+library (just like in the command above). You can pass any other
+flags, they should work.
 
 ```c
 cbuild_recompile_myself(__FILE__, argv, "-Llib/cbuild", "-lcbuild", "-Ilib/cbuild/include", NULL);
@@ -106,20 +107,6 @@ you can update mtime of `build.c` and run `./build`
 
 All compiler's commands, stdout and stderr are printed like usual,
 emacs' parsing doesn't break.
-
-Exit code is unnecessary, but heres an example how to get exit code of
-compilation:
-
-```c
-pid_t p = cbuild_target_compile(foo);
-int ws;
-waitpid(p, &ws, 0);
-if (!WIFEXITED(ws)) errx(EXIT_FAILURE, "child was killed");
-int s = WEXITSTATUS(ws);
-if (s != 0) errx(EXIT_FAILURE, "child exited with code %d", s);
-```
-
-You can do many more things, its literally a c program.
 
 ---
 

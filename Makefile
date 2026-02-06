@@ -15,6 +15,10 @@ dep = $(SRCS:.c=.d)
 $(OUT): $(objs)
 	$(AR) rcs $@ $^
 
+build.o: CFLAGS = -Wall -Wextra -Iinclude -std=c23
+build: build.o
+build: $(OUT)
+
 -include $(dep)
 
 clean:
