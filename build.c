@@ -1,3 +1,5 @@
+#include "build.h"
+
 #include <cbuild.h>
 #include <string.h>
 #include <wait.h>
@@ -18,14 +20,7 @@ const char *srcs[] = {
         "-Wconversion", "-Werror=implicit-fallthrough"
 
 int main(int argc __attribute__((unused)), char **argv) {
-    cbuild_recompile_myself(__FILE__,
-                            argv,
-                            "-Wall",
-                            "-Wextra",
-                            "-L.",
-                            "-lcbuild",
-                            "-Iinclude",
-                            NULL);
+    cbuild_recompile_myself(__FILE__, argv, "-Wall", "-Wextra", CBUILD_SELFCOMPILE_FLAGS, NULL);
 
     cbuild_target_t *lib = cbuild_create_staticlib("libcbuild.a", NULL);
     if (lib == NULL)
