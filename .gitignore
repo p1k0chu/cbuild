@@ -1,0 +1,5 @@
+*.[aod]
+*.so
+
+/compile_commands.json
+/.cache
