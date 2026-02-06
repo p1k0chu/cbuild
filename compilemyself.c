@@ -67,7 +67,7 @@ void cbuild_recompile_myself(const char *sourcepath, char **argv, ...) {
 recompile:
 
     cbuild_obj_t *obj = cbuild_obj_create(sourcepath, NULL);
-    cbuild_target_t *exe = cbuild_target_create(buf, obj, NULL);
+    cbuild_target_t *exe = cbuild_create_executable(buf, obj, NULL);
 
     va_list vlist;
     va_start(vlist, argv);

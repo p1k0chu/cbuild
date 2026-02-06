@@ -13,6 +13,16 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+[[noreturn]] static void run_ar(cbuild_target_t *target);
+[[noreturn]] static void run_gcc(cbuild_target_t *target);
+
+static void print_cmd(char **cmd, size_t len) {
+    for (size_t i = 0; i < len; ++i) {
+        printf("%s ", cmd[i]);
+    }
+    putchar('\n');
+}
+
 pid_t cbuild_target_compile(cbuild_target_t *target) {
     pid_t cpid = fork();
     if (cpid < 0) {
@@ -47,31 +57,12 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
     if (!ineedtocompile)
         exit(EXIT_SUCCESS);
 
-    char *cmd[4 + target->ldflags.len + target->objs.len];
-    size_t i = 0;
-
-    cmd[i++] = "gcc";
-
-    for (size_t j = 0; j < target->objs.len; ++j) {
-        cmd[i++] = (char *)target->objs.ptr[j]->outpath;
+    switch (target->type) {
+    case CBUILD_TARGET_STATICLIB:
+        run_ar(target);
+    default:
+        run_gcc(target);
     }
-
-    for (size_t j = 0; j < target->ldflags.len; ++j) {
-        cmd[i++] = (char *)target->ldflags.ptr[j];
-    }
-
-    cmd[i++] = "-o";
-    cmd[i++] = (char *)target->outpath;
-
-    cmd[i++] = NULL;
-
-    for (size_t j = 0; j < i - 1; ++j) {
-        printf("%s ", cmd[j]);
-    }
-    putchar('\n');
-
-    execvp("gcc", cmd);
-    err(EXIT_FAILURE, "child failed to exec");
 }
 
 pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
@@ -97,11 +88,57 @@ pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
     cmd[i++] = (char *)obj->src;
     cmd[i++] = NULL;
 
-    for (size_t j = 0; j < i - 1; ++j) {
-        printf("%s ", cmd[j]);
-    }
-    putchar('\n');
+    print_cmd(cmd, i - 1);
 
     execvp("gcc", cmd);
     err(EXIT_FAILURE, "child failed to exec");
 }
+
+[[noreturn]] static void run_gcc(cbuild_target_t *target) {
+    const bool isshared = target->type == CBUILD_TARGET_SHAREDLIB;
+    const size_t n = (isshared ? 5 : 4) + target->ldflags.len + target->objs.len;
+    char *cmd[n];
+    size_t i = 0;
+
+    cmd[i++] = "gcc";
+
+    for (size_t j = 0; j < target->objs.len; ++j) {
+        cmd[i++] = (char *)target->objs.ptr[j]->outpath;
+    }
+
+    if (isshared)
+        cmd[i++] = "-shared";
+
+    for (size_t j = 0; j < target->ldflags.len; ++j) {
+        cmd[i++] = (char *)target->ldflags.ptr[j];
+    }
+
+    cmd[i++] = "-o";
+    cmd[i++] = (char *)target->outpath;
+    cmd[i++] = NULL;
+
+    print_cmd(cmd, i - 1);
+
+    execvp("gcc", cmd);
+    err(EXIT_FAILURE, "failed to exec gcc");
+}
+
+static void run_ar(cbuild_target_t *target) {
+    char *cmd[4 + target->objs.len];
+
+    cmd[0] = "ar";
+    cmd[1] = "rcs";
+    cmd[2] = (char *)target->outpath;
+
+    size_t i = 3;
+    for (size_t j = 0; j < target->objs.len; ++j)
+        cmd[i++] = target->objs.ptr[j]->outpath;
+
+    cmd[i++] = NULL;
+
+    print_cmd(cmd, i - 1);
+
+    execvp("ar", cmd);
+    err(EXIT_FAILURE, "failed to exec ar");
+}
+

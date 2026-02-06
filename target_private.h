@@ -10,6 +10,7 @@ DEFINE_ARRAY(obj_array, cbuild_obj_t *);
 DEFINE_ARRAY(ldflags, const char *);
 
 typedef struct cbuild_target {
+    enum cbuild_target_type type;
     const char *outpath;
     struct cbuild__obj_array objs;
     struct cbuild__ldflags ldflags;

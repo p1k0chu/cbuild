@@ -49,10 +49,14 @@ cbuild_obj_append_cflags(foo_obj, "-Werror");
 
 You could compile it like that via `cbuild_obj_compile`, but you
 can also create an executable using `cbuild_target_create`. it takes
-the output filename and a vararg of `cbuild_obj_t`'s
+the type of the target, output filename and a vararg of `cbuild_obj_t`'s.
+
+Type of the target is one of `enum cbuild_target_type`, there's also 3
+macros to create each type: `cbuild_create_executable`,
+`cbuild_create_sharedlib`,`cbuild_create_staticlib`
 
 ```c
-cbuild_target_t *foo = cbuild_target_create("foo", foo_obj, NULL);
+cbuild_target_t *foo = cbuild_create_executable("foo", foo_obj, NULL);
 ```
 
 Since you can't mix types for varargs (or you can, inconveniently),

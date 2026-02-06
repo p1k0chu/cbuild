@@ -9,12 +9,13 @@
 DEFINE_APPENDER_FUN(target, objs, cbuild_obj_t *);
 DEFINE_APPENDER_FUN(target, ldflags, const char *);
 
-cbuild_target_t *cbuild_target_create(const char *name, ...) {
+cbuild_target_t *cbuild_target_create(enum cbuild_target_type type, const char *name, ...) {
     cbuild_target_t *p = calloc(1, sizeof(*p));
     if (p == NULL)
         CBUILD_RET_ERR(CBUILD_EMALLOC, NULL);
 
     p->outpath = name;
+    p->type = type;
 
     va_list vlist;
     va_start(vlist, name);
