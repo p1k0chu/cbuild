@@ -12,7 +12,8 @@ This library is licensed with LGPL-3.0-or-later. see `LICENSE` and
 # Usage
 
 TLDR: full example (without error handling) at the bottom. also see
-`build.c` for example usage.
+`build.c` for example usage. also see `examples/` directory for some
+more examples.
 
 First, you need to compile this library as a static lib. Clone the
 repository and run `make`, this creates a `libcbuild.a` file in
