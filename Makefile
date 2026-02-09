@@ -7,22 +7,29 @@ CFLAGS += -Wall -Wextra -MMD -iquote ./include -std=gnu23	\
 
 SRCS := error.c mtime.c object.c utils.c target.c compile.c	\
 	compilemyself.c filename.c
-OUT := libcbuild.a
+OUT_STATIC := libcbuild.a
+OUT_SHARED := libcbuild.so
 
 objs = $(SRCS:.c=.o)
 dep = $(SRCS:.c=.d)
 
-$(OUT): $(objs)
+shared: $(OUT_SHARED)
+static: $(OUT_STATIC)
+.PHONY: static shared
+
+all: static shared
+.PHONY: all
+
+$(OUT_STATIC): $(objs)
 	$(AR) rcs $@ $^
 
-build.o: CFLAGS = -Wall -Wextra -Iinclude -std=c23
-build: build.o
-build: $(OUT)
+$(OUT_SHARED): $(objs)
+	$(CC) $^ $(LDFLAGS) $(LDLIBS) $(CFLAGS) -shared -o $@
 
 -include $(dep)
 
 clean:
-	-$(RM) -v $(OUT) $(objs) $(dep)
+	-$(RM) -v $(OUT_STATIC) $(OUT_SHARED) $(objs) $(dep)
 .PHONY: clean
 
 clean-objs:

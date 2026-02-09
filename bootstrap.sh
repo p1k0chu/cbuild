@@ -5,31 +5,41 @@
 # build.h header that defines a macro CBUILD_SELFCOMPILE_FLAGS, that
 # you need to pass to cbuild_recompile_myself.
 
+# options:
+# --nomake: dont run make in cbuild's root directory
+# --static: prefer static version of the library
+
 cbuild_dir=$(realpath $(dirname -- "${BASH_SOURCE[0]}"))
 
-make -C "$cbuild_dir" || exit 1
+nomake=0
+usestatic=0
+build_c="build.c"
 
-build_c="$1"
-if [[ -z "$build_c" ]]; then
-    build_c="build.c"
-fi
+while [[ $# -gt 0 ]]; do
+    case $1 in
+	--nomake)
+	    nomake=1
+	    shift
+	    ;;
+	--static)
+	    usestatic=1
+	    shift
+	    ;;
+	-*|--*)
+	    echo "Unknown option $1" >&2
+	    exit 1
+	    ;;
+	*)
+	    build_c="$1"
+	    shift
+	    ;;
+    esac
+done
 
 if [[ ! -f "$build_c" ]]; then
     echo "file \"$build_c\" does not exit" >&2
     exit 1
 fi
-
-build_exe="${build_c%.*}"
-build_h="${build_exe}.h"
-
-echo "Cbuild library path: $cbuild_dir"
-echo "Build driver: $build_c"
-echo "Generating header: $build_h"
-
-cat > "$build_h" <<EOF
-#define CBUILD_SELFCOMPILE_FLAGS \
-    "-L$cbuild_dir", "-lcbuild", "-I${cbuild_dir}/include"
-EOF
 
 if [[ -z "$CC" ]]; then
     CC='gcc'
@@ -41,8 +51,39 @@ then
     exit 1
 fi
 
-flags="-L$cbuild_dir -lcbuild -I${cbuild_dir}/include"
+if (( nomake == 0 )); then
+    local makeflag42
+    if (( usestatic == 1 )); then
+	makeflag42="static"
+    else
+	makeflag42="shared"
+    fi
+    make -C "$cbuild_dir" $makeflag42 || exit 1
+fi
 
-echo "Compile command: $CC $build_c $flags -o $build_exe"
+build_exe="${build_c%.*}"
+build_h="${build_exe}.h"
+
+echo "Cbuild library path: $cbuild_dir"
+echo "Build driver: $build_c"
+echo "Generating header: $build_h"
+
+flags="-L$cbuild_dir -I${cbuild_dir}/include"
+
+if (( usestatic == 1 )); then
+    flags="$flags -l:libcbuild.a"
+    cat > "$build_h" <<EOF
+#define CBUILD_SELFCOMPILE_FLAGS \
+    "-L$cbuild_dir", "-I${cbuild_dir}/include", "-l:libcbuild.a"
+EOF
+else
+    flags="$flags -l:libcbuild.so -Wl,-rpath=${cbuild_dir}"
+    cat > "$build_h" <<EOF
+#define CBUILD_SELFCOMPILE_FLAGS \
+    "-L$cbuild_dir", "-I${cbuild_dir}/include", "-l:libcbuild.so", "-Wl,-rpath=$cbuild_dir"
+EOF
+fi
+
+echo "$CC $build_c $flags -o $build_exe"
 
 "$CC" "$build_c" $flags -o "$build_exe"
