@@ -55,7 +55,7 @@ int main(int argc __attribute__((unused)), char **argv) {
         status = WEXITSTATUS(ws);
     }
 
-    cpid = cbuild_target_compile(libso);
+    cpid = cbuild_target_compile((void *)libso);
     if (cpid < 0) {
         return 1;
     } else if (cpid > 0) {
