@@ -1,6 +1,8 @@
 // Copyright (C) 2026 p1k0chu
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include "cbuild/object.h"
+
 #include "cbuild/misc.h"
 #include "target_private.h"
 #include "utils.h"
@@ -15,6 +17,7 @@ cbuild_obj_t *cbuild_obj_create(const char *cfile, ...) {
     if (o == NULL)
         goto error;
 
+    o->base.type = CBUILD_TARGET_OBJECT;
     o->base.outpath = cbuild_changestrext(cfile, "o");
     if (o->base.outpath == NULL)
         goto error;
