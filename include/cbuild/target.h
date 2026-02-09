@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <stddef.h>
 #include <sys/pidfd.h>
 
 enum cbuild_target_type {
@@ -23,6 +24,6 @@ typedef struct cbuild_target cbuild_target_t;
  * (e.g. custom targets and executables are ignored, libraries turn
  * into linker flags, ...)
  */
-int cbuild_target_append_deps(cbuild_target_t *target, cbuild_target_t *dependency);
+int cbuild_target_append_deps(cbuild_target_t *target, cbuild_target_t **deps, size_t ndeps);
 
 void cbuild_target_free(cbuild_target_t *);

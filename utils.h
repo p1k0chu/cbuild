@@ -20,13 +20,16 @@
         size_t capacity;         \
     };
 
-#define DEFINE_APPENDER_FUN(structname, name, type)                                        \
-    int cbuild_##structname##_append_##name(struct cbuild_##structname *o, type element) { \
-        if (CBUILD__ENSURE_CAPACITY(o->name, o->name.len + 1) < 0)                         \
-            CBUILD_RET_ERR(CBUILD_EMALLOC, -1);                                            \
-                                                                                           \
-        o->name.ptr[o->name.len++] = element;                                              \
-        return 0;                                                                          \
+#define DEFINE_APPENDER_FUN(structname, name, type)                        \
+    int cbuild_##structname##_append_##name(struct cbuild_##structname *o, \
+                                            type *elements,                \
+                                            size_t nelements) {            \
+        if (CBUILD__ENSURE_CAPACITY(o->name, o->name.len + nelements) < 0) \
+            CBUILD_RET_ERR(CBUILD_EMALLOC, -1);                            \
+                                                                           \
+        for (size_t i = 0; i < nelements; ++i)                             \
+            o->name.ptr[o->name.len++] = elements[i];                      \
+        return 0;                                                          \
     }
 
 int cbuild__ensure_capacity(void **ptr, size_t *capacity, size_t elemsize, size_t desired);

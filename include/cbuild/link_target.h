@@ -6,6 +6,8 @@
 #include "object.h"
 #include "target.h"
 
+#include <stddef.h>
+
 typedef struct cbuild_link_target cbuild_link_target_t;
 typedef cbuild_link_target_t cbuild_executable_t;
 typedef cbuild_link_target_t cbuild_sharedlib_t;
@@ -18,7 +20,9 @@ typedef cbuild_link_target_t cbuild_staticlib_t;
  */
 cbuild_link_target_t *cbuild_link_target_create(enum cbuild_target_type, const char *name, ...);
 
-int cbuild_link_target_append_ldflags(cbuild_link_target_t *, const char *);
+int cbuild_link_target_append_ldflags(cbuild_link_target_t *,
+                                      const char **ldflags,
+                                      size_t nldflags);
 
 /* Macros to create each type of link_target */
 
@@ -31,8 +35,11 @@ int cbuild_link_target_append_ldflags(cbuild_link_target_t *, const char *);
 
 /* Aliases for cbuild_link_target_append... */
 
-#define cbuild_executable_append_ldflags(exe, ldflag) cbuild_link_target_append_ldflags(exe, ldflag)
+#define cbuild_executable_append_ldflags(exe, ldflags, nldflags) \
+    cbuild_link_target_append_ldflags(exe, ldflags, nldflags)
 
-#define cbuild_sharedlib_append_ldflags(exe, ldflag) cbuild_link_target_append_ldflags(exe, ldflag)
+#define cbuild_sharedlib_append_ldflags(exe, ldflags, nldflags) \
+    cbuild_link_target_append_ldflags(exe, ldflags, nldflags)
 
-#define cbuild_staticlib_append_ldflags(exe, ldflag) cbuild_link_target_append_ldflags(exe, ldflag)
+#define cbuild_staticlib_append_ldflags(exe, ldflags, nldflags) \
+    cbuild_link_target_append_ldflags(exe, ldflags, nldflags)

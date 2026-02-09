@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
     cbuild_obj_t *o = cbuild_obj_create("file1.c", NULL);
     cbuild_obj_t *o2 = cbuild_obj_create("file2.c", NULL);
 
-    cbuild_target_append_deps((void *)o, t);
-    cbuild_target_append_deps((void *)o2, t2);
+    cbuild_target_append_deps((void *)o, &t, 1);
+    cbuild_target_append_deps((void *)o2, &t2, 1);
 
     cbuild_executable_t *exe = cbuild_create_executable("custom_target_example_exe", o, o2, NULL);
 

@@ -34,7 +34,7 @@ cbuild_obj_t *cbuild_obj_create(const char *cfile, ...) {
             va_end(vlist);
             return o;
         } else {
-            if (cbuild_obj_append_cflags(o, flag) < 0)
+            if (cbuild_obj_append_cflags(o, &flag, 1) < 0)
                 goto error;
         }
     };

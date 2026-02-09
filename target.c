@@ -40,7 +40,7 @@ cbuild_link_target_create(enum cbuild_target_type type, const char *name, ...) {
             va_end(vlist);
             return p;
         } else {
-            cbuild_target_append_deps((void *)p, o);
+            cbuild_target_append_deps((void *)p, &o, 1);
         }
     }
 }

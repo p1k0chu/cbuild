@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <stddef.h>
+
 typedef struct cbuild_obj cbuild_obj_t;
 
 /**
@@ -15,7 +17,7 @@ typedef struct cbuild_obj cbuild_obj_t;
 cbuild_obj_t *cbuild_obj_create(const char *cfile, ...);
 
 /**
- * Append a flag to CFLAGS.
+ * Append cflags.
  * On errors, returns -1. otherwise zero.
  */
-int cbuild_obj_append_cflags(cbuild_obj_t *o, const char *flag);
+int cbuild_obj_append_cflags(cbuild_obj_t *o, const char **cflags, size_t ncflags);

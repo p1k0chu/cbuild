@@ -28,24 +28,26 @@ int main(int argc __attribute__((unused)), char **argv) {
     if (liba == NULL)
         return 1;
 
-    cbuild_staticlib_t *libso = cbuild_create_sharedlib("libcbuild.so", NULL);
+    cbuild_sharedlib_t *libso = cbuild_create_sharedlib("libcbuild.so", NULL);
     if (libso == NULL)
         return 1;
 
     const size_t n = sizeof(srcs) / sizeof(*srcs);
+    cbuild_obj_t *objs[n];
     for (size_t i = 0; i < n; ++i) {
-        cbuild_obj_t *obj = cbuild_obj_create(srcs[i], COMMON_CFLAGS, NULL);
-        if (obj == NULL)
-            return 1;
-        if (cbuild_target_append_deps((void *)liba, (void *)obj) < 0)
-            return 1;
-        if (cbuild_target_append_deps((void *)libso, (void *)obj) < 0)
+        objs[i] = cbuild_obj_create(srcs[i], COMMON_CFLAGS, NULL);
+        if (objs[i] == NULL)
             return 1;
     }
 
+    if (cbuild_target_append_deps((void *)liba, (void *)objs, n) < 0)
+        return 1;
+    if (cbuild_target_append_deps((void *)libso, (void *)objs, n) < 0)
+        return 1;
+
     int ws;
     int status = 0;
-    pid_t cpid = cbuild_target_compile((void*)liba);
+    pid_t cpid = cbuild_target_compile((void *)liba);
     if (cpid < 0) {
         return 1;
     } else if (cpid > 0) {

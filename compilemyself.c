@@ -77,8 +77,8 @@ recompile:
         if (p == NULL)
             break;
 
-        cbuild_obj_append_cflags(obj, p);
-        cbuild_executable_append_ldflags(exe, p);
+        cbuild_obj_append_cflags(obj, &p, 1);
+        cbuild_executable_append_ldflags(exe, &p, 1);
     }
     va_end(vlist);
 

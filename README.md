@@ -41,12 +41,15 @@ cbuild_obj_t *foo_obj = cbuild_obj_create("foo.c", "-std=gnu23", "-Wall", "-O2",
 
 If after the fact you want to add more cflags, you can use
 `cbuild_obj_append_cflags`. notice how all obj related functions begin
-with `cbuild_obj...`, for easy autocompletion. At the moment,
-`cbuild_.*_append_.*` functions only take one argument, not varargs.
+with `cbuild_obj...`, for easy autocompletion. All
+`cbuild_..._append_...` functions take an array of items.
 
 ```c
-cbuild_obj_append_cflags(foo_obj, "-Wextra");
-cbuild_obj_append_cflags(foo_obj, "-Werror");
+const char *wextra = "-Wextra";
+cbuild_obj_append_cflags(foo_obj, &wextra, 1);
+
+char *someflags[] = {"-std=c99", "-pedantic"};
+cbuild_obj_append_cflags(foo_obj, someflags, 2);
 ```
 
 You could compile it like that via `cbuild_obj_compile`, but you
@@ -72,7 +75,8 @@ you can only append ldflags via
 types of link target)
 
 ```c
-cbuild_executable_append_ldflags(foo, "-lm");
+const char *ldlibs[] = {"-lm"};
+cbuild_executable_append_ldflags(foo, ldlibs, sizeof(ldlibs) / sizeof(*ldlibs));
 ```
 
 Now, to compile, use `cbuild_target_compile`. its going to compare the
