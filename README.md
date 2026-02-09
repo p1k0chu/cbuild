@@ -51,21 +51,28 @@ cbuild_obj_append_cflags(foo_obj, "-Werror");
 
 You could compile it like that via `cbuild_obj_compile`, but you
 can also create an executable using `cbuild_target_create`. it takes
-the type of the target, output filename and a vararg of `cbuild_obj_t`'s.
+the type of the target, output filename and a vararg of `cbuild_target_t *`'s.
+
+There's multiple target types, but they all share the same base:
+`cbuild_target_t`. It should be always safe to cast the specific types
+to `cbuild_target_t` (you need to cast it sometimes).
 
 Type of the target is one of `enum cbuild_target_type`, there's also 3
 macros to create each type: `cbuild_create_executable`,
 `cbuild_create_sharedlib`,`cbuild_create_staticlib`
 
 ```c
-cbuild_target_t *foo = cbuild_create_executable("foo", foo_obj, NULL);
+cbuild_executable_t *foo = cbuild_create_executable("foo", foo_obj, NULL);
 ```
 
 Since you can't mix types for varargs (or you can, inconveniently),
-you can only append ldflags via `cbuild_target_append_ldflags`.
+you can only append ldflags via
+`cbuild_executable_append_ldflags`. (its an alias for
+`cbuild_link_target_append_ldflags`, same alias exists for other 2
+types of link target)
 
 ```c
-cbuild_target_append_ldflags(foo, "-lm");
+cbuild_executable_append_ldflags(foo, "-lm");
 ```
 
 Now, to compile, use `cbuild_target_compile`. its going to compare the
@@ -73,11 +80,16 @@ timestamps of all the required files (if foo.c > foo.o, compile foo.o,
 then if foo.o > foo, compile foo). All commands are printed to stdout.
 
 It returns child process' pid, which you should `wait` for. (otherwise
-the parent exists too early and kills its children)
+the parent exists too early and kills its children). It may also
+return 0 if the target is up to date, or -1 if an error occurred.
 
 ```c
-pid_t cpid = cbuild_target_compile(foo);
-waitpid(cpid, NULL, 0);
+// void* cast is simply shorter than cbuild_target_t*
+pid_t cpid = cbuild_target_compile((void *)foo);
+if (cpid < 0)
+	exit(1);
+if (cpid > 0)
+	waitpid(cpid, NULL, 0);
 ```
 
 Now compile your build driver. You can, for example, add this git repo
@@ -136,9 +148,11 @@ int main(int argc, char **argv) {
                             NULL);
 
     cbuild_obj_t *foo_obj = cbuild_obj_create("foo.c", "-std=gnu23", "-Wall", "-Wextra", NULL);
-    cbuild_target_t *foo = cbuild_target_create("foo", foo_obj, NULL);
+    cbuild_executable_t *foo = cbuild_executable_create("foo", foo_obj, NULL);
 
-    waitpid(cbuild_target_compile(foo), NULL, 0);
+	pid_t cpid = cbuild_target_compile((void *)foo);
+	if (cpid > 0)
+		waitpid(cpid, NULL, 0);
 }
 ```
 

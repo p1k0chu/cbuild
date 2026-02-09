@@ -13,7 +13,7 @@ typedef cbuild_link_target_t cbuild_staticlib_t;
 
 /**
  * Create a target, either an exe or a static/shared library.
- * Name is the filename. varargs are objects 'struct cbuild_obj *',
+ * Name is the filename. varargs are objects 'struct cbuild_target_t *',
  * last one must be NULL
  */
 cbuild_link_target_t *cbuild_link_target_create(enum cbuild_target_type, const char *name, ...);
