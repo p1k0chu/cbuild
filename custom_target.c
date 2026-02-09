@@ -23,9 +23,6 @@ cbuild_custom_target_t *cbuild_create_custom_target(const char *outpath,
 }
 
 pid_t cbuild__custom_target_compile(cbuild_custom_target_t *target) {
-    if (cbuild__mtimecmp(target->base.outpath, target->inpath) >= 0)
-        return 0;
-
     pid_t cpid = fork();
     if (cpid < 0) {
         CBUILD_RET_ERR(CBUILD_EFORK, -1);

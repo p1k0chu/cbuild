@@ -16,4 +16,13 @@ enum cbuild_target_type {
 // base struct for all targets
 typedef struct cbuild_target cbuild_target_t;
 
+/**
+ * Add a dependency on another target, e.g. an object.
+ * This means the dependencies will be built before this target, and
+ * they will be added to compilation command appropriately
+ * (e.g. custom targets and executables are ignored, libraries turn
+ * into linker flags, ...)
+ */
+int cbuild_target_append_deps(cbuild_target_t *target, cbuild_target_t *dependency);
+
 void cbuild_target_free(cbuild_target_t *);

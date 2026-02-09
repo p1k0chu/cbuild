@@ -37,9 +37,9 @@ int main(int argc __attribute__((unused)), char **argv) {
         cbuild_obj_t *obj = cbuild_obj_create(srcs[i], COMMON_CFLAGS, NULL);
         if (obj == NULL)
             return 1;
-        if (cbuild_staticlib_append_objs(liba, obj) < 0)
+        if (cbuild_target_append_deps((void *)liba, (void *)obj) < 0)
             return 1;
-        if (cbuild_staticlib_append_objs(libso, obj) < 0)
+        if (cbuild_target_append_deps((void *)libso, (void *)obj) < 0)
             return 1;
     }
 

@@ -1,3 +1,5 @@
-/build_copy.c
+/file1.c
+/file2.c
+/custom_target_example_exe
 /custom_target_ex
 /custom_target_ex.h

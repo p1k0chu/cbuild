@@ -1,8 +1,6 @@
 // Copyright (C) 2026 p1k0chu
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "cbuild/compile.h"
-
 #include "cbuild/link_target.h"
 #include "mtime.h"
 #include "target_private.h"
@@ -27,36 +25,14 @@ static pid_t cbuild_obj_compile(cbuild_obj_t *obj);
 static pid_t cbuild_link_target_compile(cbuild_link_target_t *target);
 
 pid_t cbuild_target_compile(cbuild_target_t *target) {
-    switch (target->type) {
-    case CBUILD_TARGET_EXE:
-    case CBUILD_TARGET_SHAREDLIB:
-    case CBUILD_TARGET_STATICLIB:
-        return cbuild_link_target_compile((cbuild_link_target_t *)target);
-    case CBUILD_TARGET_OBJECT:
-        return cbuild_obj_compile((cbuild_obj_t *)target);
-    case CBUILD_TARGET_CUSTOM:
-        return cbuild__custom_target_compile((cbuild_custom_target_t *)target);
-    default:
-        CBUILD_RET_ERR(CBUILD_EINVAL, -1);
-    }
-}
+    char updateddeps = 0;
 
-static pid_t cbuild_link_target_compile(cbuild_link_target_t *target) {
-    pid_t cpid = fork();
-    if (cpid < 0) {
-        CBUILD_RET_ERR(CBUILD_EFORK, -1);
-    } else if (cpid > 0) {
-        return cpid;
-    }
-
-    char ineedtocompile = 0;
-
-    for (size_t i = 0; i < target->objs.len; ++i) {
-        cbuild_obj_t *obj = target->objs.ptr[i];
-        if (cbuild__mtimecmp(obj->base.outpath, obj->src) < 0) {
-            pid_t child = cbuild_obj_compile(obj);
-            if (child < 0)
-                err(EXIT_FAILURE, "fork");
+    for (size_t i = 0; i < target->deps.len; ++i) {
+        cbuild_target_t *obj = target->deps.ptr[i];
+        pid_t child = cbuild_target_compile(obj);
+        if (child < 0)
+            err(EXIT_FAILURE, "fork");
+        if (child > 0) {
             int wstatus;
             waitpid(child, &wstatus, 0);
 
@@ -67,13 +43,44 @@ static pid_t cbuild_link_target_compile(cbuild_link_target_t *target) {
                 errx(EXIT_FAILURE, "child returned with error code %d", code);
         }
 
-        if (!ineedtocompile && cbuild__mtimecmp(target->base.outpath, obj->base.outpath) < 0) {
-            ineedtocompile = 1;
+        if (!updateddeps) {
+            updateddeps |= cbuild__mtimecmp(target->outpath, obj->outpath) < 0;
         }
     }
 
-    if (!ineedtocompile)
-        exit(EXIT_SUCCESS);
+    switch (target->type) {
+    case CBUILD_TARGET_EXE:
+    case CBUILD_TARGET_SHAREDLIB:
+    case CBUILD_TARGET_STATICLIB:
+        if (updateddeps) {
+            return cbuild_link_target_compile((cbuild_link_target_t *)target);
+        }
+        break;
+    case CBUILD_TARGET_OBJECT:
+        if (updateddeps || cbuild__mtimecmp(target->outpath, ((cbuild_obj_t *)target)->src) < 0) {
+            return cbuild_obj_compile((cbuild_obj_t *)target);
+        }
+        break;
+    case CBUILD_TARGET_CUSTOM:
+        cbuild_custom_target_t *ct = (void *)target;
+        if (updateddeps ||
+            (ct->inpath == NULL || cbuild__mtimecmp(target->outpath, ct->inpath) < 0)) {
+            return cbuild__custom_target_compile((cbuild_custom_target_t *)target);
+        }
+        break;
+    default:
+        CBUILD_RET_ERR(CBUILD_EINVAL, -1);
+    }
+    return 0;
+}
+
+static pid_t cbuild_link_target_compile(cbuild_link_target_t *target) {
+    pid_t cpid = fork();
+    if (cpid < 0) {
+        CBUILD_RET_ERR(CBUILD_EFORK, -1);
+    } else if (cpid > 0) {
+        return cpid;
+    }
 
     switch (target->base.type) {
     case CBUILD_TARGET_STATICLIB:
@@ -111,16 +118,60 @@ static pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
     execvp("gcc", cmd);
     err(EXIT_FAILURE, "child failed to exec");
 }
+
 [[noreturn]] static void run_gcc(cbuild_link_target_t *target) {
     const bool isshared = target->base.type == CBUILD_TARGET_SHAREDLIB;
-    const size_t n = (isshared ? 5 : 4) + target->ldflags.len + target->objs.len;
+    const size_t n = (isshared ? 5 : 4) + target->ldflags.len + target->base.deps.len;
     char *cmd[n];
     size_t i = 0;
 
     cmd[i++] = "gcc";
 
-    for (size_t j = 0; j < target->objs.len; ++j) {
-        cmd[i++] = (char *)target->objs.ptr[j]->base.outpath;
+    // separate loops, because objects go first, before potential
+    // libraries
+
+    for (size_t j = 0; j < target->base.deps.len; ++j) {
+        cbuild_target_t *d = target->base.deps.ptr[j];
+        switch (d->type) {
+        case CBUILD_TARGET_EXE:
+        case CBUILD_TARGET_SHAREDLIB:
+        case CBUILD_TARGET_STATICLIB:
+        case CBUILD_TARGET_CUSTOM:
+            break;
+        case CBUILD_TARGET_OBJECT:
+            cmd[i++] = (char *)d->outpath;
+            break;
+        }
+    }
+
+    for (size_t j = 0; j < target->base.deps.len; ++j) {
+        cbuild_target_t *d = target->base.deps.ptr[j];
+        switch (d->type) {
+        case CBUILD_TARGET_SHAREDLIB:
+        case CBUILD_TARGET_STATICLIB:
+            // make a -l:libexample.a kind of argument out of d->outpath
+
+            const ssize_t size = snprintf(NULL, 0, "-l:%s", d->outpath);
+            if (size < 0)
+                err(1, "snprintf");
+
+            // we never free anything because of exec/exit
+            char *buf = malloc((size_t)size + 1);
+            if (buf == NULL)
+                err(1, "malloc");
+            const ssize_t size2 = snprintf(buf, (size_t)size + 1, "-l:%s", d->outpath);
+            if (size2 < 0)
+                err(1, "snprintf");
+            if (size2 >= size)
+                warnx("snprintf truncated: %s", buf);
+
+            cmd[i++] = buf;
+            break;
+        case CBUILD_TARGET_OBJECT:
+        case CBUILD_TARGET_EXE:
+        case CBUILD_TARGET_CUSTOM:
+            break;
+        }
     }
 
     if (isshared)
@@ -141,15 +192,18 @@ static pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
 }
 
 static void run_ar(cbuild_link_target_t *target) {
-    char *cmd[4 + target->objs.len];
+    char *cmd[4 + target->base.deps.len];
 
     cmd[0] = "ar";
     cmd[1] = "rcs";
     cmd[2] = (char *)target->base.outpath;
 
     size_t i = 3;
-    for (size_t j = 0; j < target->objs.len; ++j)
-        cmd[i++] = (char *)target->objs.ptr[j]->base.outpath;
+    for (size_t j = 0; j < target->base.deps.len; ++j) {
+        cbuild_target_t *d = target->base.deps.ptr[j];
+        if (d->type == CBUILD_TARGET_OBJECT)
+            cmd[i++] = (char *)d->outpath;
+    }
 
     cmd[i++] = NULL;
 
@@ -158,4 +212,3 @@ static void run_ar(cbuild_link_target_t *target) {
     execvp("ar", cmd);
     err(EXIT_FAILURE, "failed to exec ar");
 }
-

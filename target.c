@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-DEFINE_APPENDER_FUN(link_target, objs, cbuild_obj_t *);
+DEFINE_APPENDER_FUN(target, deps, cbuild_target_t *);
 DEFINE_APPENDER_FUN(link_target, ldflags, const char *);
 
 cbuild_link_target_t *
@@ -32,15 +32,15 @@ cbuild_link_target_create(enum cbuild_target_type type, const char *name, ...) {
 
     va_list vlist;
     va_start(vlist, name);
-    cbuild_obj_t *o;
+    cbuild_target_t *o;
 
     for (;;) {
-        o = va_arg(vlist, cbuild_obj_t *);
+        o = va_arg(vlist, cbuild_target_t *);
         if (o == NULL) {
             va_end(vlist);
             return p;
         } else {
-            cbuild_link_target_append_objs(p, o);
+            cbuild_target_append_deps((void *)p, o);
         }
     }
 }
@@ -52,7 +52,6 @@ void cbuild_target_free(cbuild_target_t *p) {
     case CBUILD_TARGET_STATICLIB:
         cbuild_link_target_t *t = (void *)p;
         free(t->ldflags.ptr);
-        free(t->objs.ptr);
         break;
     case CBUILD_TARGET_OBJECT:
         cbuild_obj_t *o = (void *)p;
@@ -64,5 +63,6 @@ void cbuild_target_free(cbuild_target_t *p) {
         // nothing to free
         break;
     }
+    free(p->deps.ptr);
     free(p);
 }

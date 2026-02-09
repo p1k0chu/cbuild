@@ -18,7 +18,6 @@ typedef cbuild_link_target_t cbuild_staticlib_t;
  */
 cbuild_link_target_t *cbuild_link_target_create(enum cbuild_target_type, const char *name, ...);
 
-int cbuild_link_target_append_objs(cbuild_link_target_t *, cbuild_obj_t *);
 int cbuild_link_target_append_ldflags(cbuild_link_target_t *, const char *);
 
 /* Macros to create each type of link_target */
@@ -32,14 +31,11 @@ int cbuild_link_target_append_ldflags(cbuild_link_target_t *, const char *);
 
 /* Aliases for cbuild_link_target_append... */
 
-#define cbuild_executable_append_objs(exe, obj) cbuild_link_target_append_objs(exe, obj)
 #define cbuild_executable_append_ldflags(exe, ldflag) \
     cbuild_link_target_append_ldflags(exe, ldflag)
 
-#define cbuild_sharedlib_append_objs(exe, obj) cbuild_link_target_append_objs(exe, obj)
 #define cbuild_sharedlib_append_ldflags(exe, ldflag) \
     cbuild_link_target_append_ldflags(exe, ldflag)
 
-#define cbuild_staticlib_append_objs(exe, obj) cbuild_link_target_append_objs(exe, obj)
 #define cbuild_staticlib_append_ldflags(exe, ldflag) \
     cbuild_link_target_append_ldflags(exe, ldflag)
