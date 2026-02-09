@@ -31,11 +31,8 @@ int cbuild_link_target_append_ldflags(cbuild_link_target_t *, const char *);
 
 /* Aliases for cbuild_link_target_append... */
 
-#define cbuild_executable_append_ldflags(exe, ldflag) \
-    cbuild_link_target_append_ldflags(exe, ldflag)
+#define cbuild_executable_append_ldflags(exe, ldflag) cbuild_link_target_append_ldflags(exe, ldflag)
 
-#define cbuild_sharedlib_append_ldflags(exe, ldflag) \
-    cbuild_link_target_append_ldflags(exe, ldflag)
+#define cbuild_sharedlib_append_ldflags(exe, ldflag) cbuild_link_target_append_ldflags(exe, ldflag)
 
-#define cbuild_staticlib_append_ldflags(exe, ldflag) \
-    cbuild_link_target_append_ldflags(exe, ldflag)
+#define cbuild_staticlib_append_ldflags(exe, ldflag) cbuild_link_target_append_ldflags(exe, ldflag)
