@@ -14,8 +14,6 @@ typedef struct cbuild_obj cbuild_obj_t;
  */
 cbuild_obj_t *cbuild_obj_create(const char *cfile, ...);
 
-void cbuild_obj_free(cbuild_obj_t *o);
-
 /**
  * Append a flag to CFLAGS.
  * On errors, returns -1. otherwise zero.

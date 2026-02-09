@@ -15,7 +15,9 @@ enum cbuild_errno {
     /// error from snprintf, etc
     CBUILD_ESNPRINTF,
     /// snprintf didn't error but truncated the string
-    CBUILD_ESNPRINTF_TRUNCATED
+    CBUILD_ESNPRINTF_TRUNCATED,
+    /// invalid arguments
+    CBUILD_EINVAL,
 };
 
 extern enum cbuild_errno cbuild_errno;

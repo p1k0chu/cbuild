@@ -1,18 +1,10 @@
-#define _GNU_SOURCE
+// Copyright (C) 2026 p1k0chu
+// SPDX-License-Identifier: LGPL-3.0-or-later
 
-#include "custom_target.h"
-
-#include "cbuild/err.h"
-#include "err.h"
 #include "mtime.h"
-#include "sys/stat.h"
-#include "sys/wait.h"
-#include "utils.h"
+#include "target_private.h"
 
-#include <fcntl.h>
 #include <stdlib.h>
-#include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 cbuild_custom_target_t *cbuild_create_custom_target(const char *outpath,
@@ -22,15 +14,16 @@ cbuild_custom_target_t *cbuild_create_custom_target(const char *outpath,
     if (t == NULL)
         CBUILD_RET_ERR(CBUILD_EMALLOC, NULL);
 
-    t->outpath = outpath;
+    t->base.outpath = outpath;
+    t->base.type = CBUILD_TARGET_CUSTOM;
     t->inpath = inpath;
     t->func = func;
 
     return t;
 }
 
-pid_t cbuild_custom_target_compile(cbuild_custom_target_t *target) {
-    if (cbuild__mtimecmp(target->outpath, target->inpath) >= 0)
+pid_t cbuild__custom_target_compile(cbuild_custom_target_t *target) {
+    if (cbuild__mtimecmp(target->base.outpath, target->inpath) >= 0)
         return 0;
 
     pid_t cpid = fork();
@@ -40,7 +33,7 @@ pid_t cbuild_custom_target_compile(cbuild_custom_target_t *target) {
         return cpid;
     }
 
-    target->func(target->outpath, target->inpath);
+    target->func(target->base.outpath, target->inpath);
     exit(0);
 }
 

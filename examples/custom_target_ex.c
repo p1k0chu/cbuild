@@ -1,3 +1,8 @@
+// This file is an example how to use this library.
+// It is public domain.
+// SPDX-License-Identifier: 0BSD
+
+
 #define _GNU_SOURCE
 
 #include "custom_target_ex.h"
@@ -17,7 +22,7 @@ int main(int argc, char **argv) {
 
     cbuild_custom_target_t *t = cbuild_create_custom_target("build_copy.c", "../build.c", cat);
 
-    pid_t p = cbuild_custom_target_compile(t);
+    pid_t p = cbuild_target_compile((void*)t);
     if (p < 0)
         errx(1, "p < 0");
     if (p > 0)

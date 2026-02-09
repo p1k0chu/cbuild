@@ -3,8 +3,8 @@
 
 #include "cbuild/compile.h"
 
+#include "cbuild/link_target.h"
 #include "mtime.h"
-#include "object_private.h"
 #include "target_private.h"
 
 #include <err.h>
@@ -13,8 +13,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-[[noreturn]] static void run_ar(cbuild_target_t *target);
-[[noreturn]] static void run_gcc(cbuild_target_t *target);
+[[noreturn]] static void run_ar(cbuild_link_target_t *target);
+[[noreturn]] static void run_gcc(cbuild_link_target_t *target);
 
 static void print_cmd(char **cmd, size_t len) {
     for (size_t i = 0; i < len; ++i) {
@@ -23,7 +23,25 @@ static void print_cmd(char **cmd, size_t len) {
     putchar('\n');
 }
 
+static pid_t cbuild_obj_compile(cbuild_obj_t *obj);
+static pid_t cbuild_link_target_compile(cbuild_link_target_t *target);
+
 pid_t cbuild_target_compile(cbuild_target_t *target) {
+    switch (target->type) {
+    case CBUILD_TARGET_EXE:
+    case CBUILD_TARGET_SHAREDLIB:
+    case CBUILD_TARGET_STATICLIB:
+        return cbuild_link_target_compile((cbuild_link_target_t *)target);
+    case CBUILD_TARGET_OBJECT:
+        return cbuild_obj_compile((cbuild_obj_t *)target);
+    case CBUILD_TARGET_CUSTOM:
+        return cbuild__custom_target_compile((cbuild_custom_target_t *)target);
+    default:
+        CBUILD_RET_ERR(CBUILD_EINVAL, -1);
+    }
+}
+
+static pid_t cbuild_link_target_compile(cbuild_link_target_t *target) {
     pid_t cpid = fork();
     if (cpid < 0) {
         CBUILD_RET_ERR(CBUILD_EFORK, -1);
@@ -35,7 +53,7 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
 
     for (size_t i = 0; i < target->objs.len; ++i) {
         cbuild_obj_t *obj = target->objs.ptr[i];
-        if (cbuild__mtimecmp(obj->outpath, obj->src) < 0) {
+        if (cbuild__mtimecmp(obj->base.outpath, obj->src) < 0) {
             pid_t child = cbuild_obj_compile(obj);
             if (child < 0)
                 err(EXIT_FAILURE, "fork");
@@ -49,7 +67,7 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
                 errx(EXIT_FAILURE, "child returned with error code %d", code);
         }
 
-        if (!ineedtocompile && cbuild__mtimecmp(target->outpath, obj->outpath) < 0) {
+        if (!ineedtocompile && cbuild__mtimecmp(target->base.outpath, obj->base.outpath) < 0) {
             ineedtocompile = 1;
         }
     }
@@ -57,7 +75,7 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
     if (!ineedtocompile)
         exit(EXIT_SUCCESS);
 
-    switch (target->type) {
+    switch (target->base.type) {
     case CBUILD_TARGET_STATICLIB:
         run_ar(target);
     default:
@@ -65,7 +83,7 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
     }
 }
 
-pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
+static pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
     pid_t cpid = fork();
     if (cpid < 0) {
         CBUILD_RET_ERR(CBUILD_EFORK, -1);
@@ -84,7 +102,7 @@ pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
 
     cmd[i++] = "-c";
     cmd[i++] = "-o";
-    cmd[i++] = obj->outpath;
+    cmd[i++] = (char *)obj->base.outpath;
     cmd[i++] = (char *)obj->src;
     cmd[i++] = NULL;
 
@@ -93,9 +111,8 @@ pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
     execvp("gcc", cmd);
     err(EXIT_FAILURE, "child failed to exec");
 }
-
-[[noreturn]] static void run_gcc(cbuild_target_t *target) {
-    const bool isshared = target->type == CBUILD_TARGET_SHAREDLIB;
+[[noreturn]] static void run_gcc(cbuild_link_target_t *target) {
+    const bool isshared = target->base.type == CBUILD_TARGET_SHAREDLIB;
     const size_t n = (isshared ? 5 : 4) + target->ldflags.len + target->objs.len;
     char *cmd[n];
     size_t i = 0;
@@ -103,7 +120,7 @@ pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
     cmd[i++] = "gcc";
 
     for (size_t j = 0; j < target->objs.len; ++j) {
-        cmd[i++] = (char *)target->objs.ptr[j]->outpath;
+        cmd[i++] = (char *)target->objs.ptr[j]->base.outpath;
     }
 
     if (isshared)
@@ -114,7 +131,7 @@ pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
     }
 
     cmd[i++] = "-o";
-    cmd[i++] = (char *)target->outpath;
+    cmd[i++] = (char *)target->base.outpath;
     cmd[i++] = NULL;
 
     print_cmd(cmd, i - 1);
@@ -123,16 +140,16 @@ pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
     err(EXIT_FAILURE, "failed to exec gcc");
 }
 
-static void run_ar(cbuild_target_t *target) {
+static void run_ar(cbuild_link_target_t *target) {
     char *cmd[4 + target->objs.len];
 
     cmd[0] = "ar";
     cmd[1] = "rcs";
-    cmd[2] = (char *)target->outpath;
+    cmd[2] = (char *)target->base.outpath;
 
     size_t i = 3;
     for (size_t j = 0; j < target->objs.len; ++j)
-        cmd[i++] = target->objs.ptr[j]->outpath;
+        cmd[i++] = (char *)target->objs.ptr[j]->base.outpath;
 
     cmd[i++] = NULL;
 

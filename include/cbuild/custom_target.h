@@ -1,0 +1,22 @@
+#pragma once
+
+typedef struct cbuild_custom_target cbuild_custom_target_t;
+
+typedef void (*cbuild_custom_target_func)(const char *outpath, const char *inpath);
+
+/**
+ * Define a custom target, which depends on file INPATH and produces
+ * file OUTPATH by first forking and then calling FUNC.
+ *
+ * FUNC takes two arguments: outpath and inpath. It returns nothing,
+ * and if fails, should call exit() with error code.
+ * FUNC does not need to check files modified time, its checked by
+ * cbuild before running it.
+ *
+ * Your FUNC should also print what it's doing. for example, print the
+ * command you are exec'ing. otherwise you'll never see if the target
+ * was rebuilt or not.
+ */
+cbuild_custom_target_t *cbuild_create_custom_target(const char *outpath,
+                                                    const char *inpath,
+                                                    cbuild_custom_target_func func);

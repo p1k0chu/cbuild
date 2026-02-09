@@ -4,5 +4,7 @@
 #pragma once
 
 #include "cbuild/compile.h"
+#include "cbuild/custom_target.h"
+#include "cbuild/link_target.h"
 #include "cbuild/object.h"
 #include "cbuild/target.h"

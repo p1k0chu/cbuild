@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "cbuild/compile.h"
+#include "cbuild/link_target.h"
 
 #include <err.h>
 #include <errno.h>
@@ -9,7 +10,6 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <wait.h>
@@ -67,7 +67,7 @@ void cbuild_recompile_myself(const char *sourcepath, char **argv, ...) {
 recompile:
 
     cbuild_obj_t *obj = cbuild_obj_create(sourcepath, NULL);
-    cbuild_target_t *exe = cbuild_create_executable(buf, obj, NULL);
+    cbuild_executable_t *exe = cbuild_create_executable(buf, obj, NULL);
 
     va_list vlist;
     va_start(vlist, argv);
@@ -78,11 +78,11 @@ recompile:
             break;
 
         cbuild_obj_append_cflags(obj, p);
-        cbuild_target_append_ldflags(exe, p);
+        cbuild_executable_append_ldflags(exe, p);
     }
     va_end(vlist);
 
-    pid_t cpid = cbuild_target_compile(exe);
+    pid_t cpid = cbuild_target_compile((void *)exe);
     if (cpid < 0)
         err(EXIT_FAILURE, "fork");
     int wstatus;

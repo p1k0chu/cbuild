@@ -1,6 +1,7 @@
 #include "build.h"
 
 #include <cbuild.h>
+#include <stdio.h>
 #include <string.h>
 #include <wait.h>
 
@@ -13,6 +14,7 @@ const char *srcs[] = {
     "object.c",
     "target.c",
     "utils.c",
+    "custom_target.c",
 };
 
 #define COMMON_CFLAGS                                                                 \
@@ -22,7 +24,7 @@ const char *srcs[] = {
 int main(int argc __attribute__((unused)), char **argv) {
     cbuild_recompile_myself(__FILE__, argv, "-Wall", "-Wextra", CBUILD_SELFCOMPILE_FLAGS, NULL);
 
-    cbuild_target_t *lib = cbuild_create_staticlib("libcbuild.a", NULL);
+    cbuild_staticlib_t *lib = cbuild_create_staticlib("libcbuild.a", NULL);
     if (lib == NULL)
         return 1;
 
@@ -31,11 +33,17 @@ int main(int argc __attribute__((unused)), char **argv) {
         cbuild_obj_t *obj = cbuild_obj_create(srcs[i], COMMON_CFLAGS, NULL);
         if (obj == NULL)
             return 1;
-        if (cbuild_target_append_objs(lib, obj) < 0)
+        if (cbuild_staticlib_append_objs(lib, obj) < 0)
             return 1;
     }
     int ws;
-    waitpid(cbuild_target_compile(lib), &ws, 0);
+    pid_t cpid = cbuild_target_compile((void *)lib);
+    if (cpid < 0)
+        return 1;
+    if (cpid == 0)
+        return 0;
+
+    waitpid(cpid, &ws, 0);
     if (!WIFEXITED(ws))
         return 1;
     return WEXITSTATUS(ws);

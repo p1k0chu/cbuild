@@ -3,14 +3,15 @@
 
 #pragma once
 
-#include "object.h"
 #include "target.h"
 
 #include <sys/types.h>
 
-pid_t cbuild_obj_compile(struct cbuild_obj *obj);
-
-pid_t cbuild_target_compile(struct cbuild_target *target);
+/**
+ * Compiles the target. If theres nothing to be done, might return
+ * zero. Returns -1 and sets cbuild_errno on errors
+ */
+pid_t cbuild_target_compile(cbuild_target_t *target);
 
 /**
  * Rebuilds your compile driver, if needed, and execs. sourcepath
