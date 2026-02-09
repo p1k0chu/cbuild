@@ -52,7 +52,6 @@ then
 fi
 
 if (( nomake == 0 )); then
-    local makeflag42
     if (( usestatic == 1 )); then
 	makeflag42="static"
     else
