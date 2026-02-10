@@ -4,6 +4,7 @@
 #include "cbuild/link_target.h"
 #include "target_private.h"
 
+#include <err.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
@@ -20,12 +21,12 @@ cbuild_link_target_create(enum cbuild_target_type type, const char *name, ...) {
     case CBUILD_TARGET_OBJECT:
     case CBUILD_TARGET_CUSTOM:
     default:
-        CBUILD_RET_ERR(CBUILD_EINVAL, NULL);
+        errx(1, "target type is invalid");
     }
 
     cbuild_link_target_t *p = calloc(1, sizeof(*p));
     if (p == NULL)
-        CBUILD_RET_ERR(CBUILD_EMALLOC, NULL);
+        err(1, "calloc");
 
     p->base.outpath = name;
     p->base.type = type;

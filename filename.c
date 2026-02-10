@@ -1,6 +1,7 @@
 // Copyright (C) 2026 p1k0chu
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include <err.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,7 +20,7 @@ char *cbuild_changestrext(const char *s, const char *ext) {
 
     char *new = malloc(n + 1);
     if (new == NULL)
-        return NULL;
+        err(1, "malloc");
 
     char *p;
     p = mempcpy(new, s, sn);

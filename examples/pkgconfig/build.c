@@ -23,31 +23,17 @@ int main(int argc, char *argv[]) {
 
     char **cflags;
     const int ncflags = cbuild_pkgconfig(&cflags, PKG_CONFIG_CFLAGS, libs, nlibs, NULL);
-    if (ncflags < 0)
-        return 1;
 
     char **ldflags;
     const int nldflags = cbuild_pkgconfig(&ldflags, PKG_CONFIG_LIBS, libs, nlibs, NULL);
-    if (nldflags < 0)
-        return 1;
 
     cbuild_obj_t *main = cbuild_obj_create("main.c", NULL);
-    if (main == NULL)
-        return 1;
-
-    if (cbuild_obj_append_cflags(main, (const char **)cflags, ncflags) < 0)
-        return 1;
+    cbuild_obj_append_cflags(main, (const char **)cflags, ncflags);
 
     cbuild_executable_t *exe = cbuild_create_executable("program", main, NULL);
-    if (exe == NULL)
-        return 1;
-
-    if (cbuild_executable_append_ldflags(exe, (const char **)ldflags, nldflags) < 0)
-        return 1;
+    cbuild_executable_append_ldflags(exe, (const char **)ldflags, nldflags);
 
     pid_t cpid = cbuild_target_compile((void *)exe);
-    if (cpid < 0)
-        return 1;
     if (cpid > 0) {
         int ws;
         waitpid(cpid, &ws, 0);

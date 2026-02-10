@@ -69,7 +69,7 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
         }
         break;
     default:
-        CBUILD_RET_ERR(CBUILD_EINVAL, -1);
+        errx(1, "target type is invalid value (not enum)");
     }
     return 0;
 }
@@ -77,7 +77,7 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
 static pid_t cbuild_link_target_compile(cbuild_link_target_t *target) {
     pid_t cpid = fork();
     if (cpid < 0) {
-        CBUILD_RET_ERR(CBUILD_EFORK, -1);
+        err(1, "fork");
     } else if (cpid > 0) {
         return cpid;
     }
@@ -93,7 +93,7 @@ static pid_t cbuild_link_target_compile(cbuild_link_target_t *target) {
 static pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
     pid_t cpid = fork();
     if (cpid < 0) {
-        CBUILD_RET_ERR(CBUILD_EFORK, -1);
+        err(1, "fork");
     } else if (cpid > 0) {
         return cpid;
     }

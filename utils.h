@@ -3,15 +3,7 @@
 
 #pragma once
 
-#include "cbuild/err.h"
-
 #include <stddef.h>
-
-#define CBUILD_RET_ERR(error, returnval) \
-    {                                    \
-        cbuild_errno = (error);          \
-        return (returnval);              \
-    }
 
 #define DEFINE_ARRAY(name, type) \
     struct cbuild__##name {      \
@@ -21,18 +13,17 @@
     };
 
 #define DEFINE_APPENDER_FUN(structname, name, type)                        \
-    int cbuild_##structname##_append_##name(struct cbuild_##structname *o, \
+    void cbuild_##structname##_append_##name(struct cbuild_##structname *o, \
                                             type *elements,                \
                                             size_t nelements) {            \
-        if (CBUILD__ENSURE_CAPACITY(o->name, o->name.len + nelements) < 0) \
-            CBUILD_RET_ERR(CBUILD_EMALLOC, -1);                            \
+        CBUILD__ENSURE_CAPACITY(o->name, o->name.len + nelements);         \
                                                                            \
         for (size_t i = 0; i < nelements; ++i)                             \
             o->name.ptr[o->name.len++] = elements[i];                      \
-        return 0;                                                          \
+        return;                                                          \
     }
 
-int cbuild__ensure_capacity(void **ptr, size_t *capacity, size_t elemsize, size_t desired);
+void cbuild__ensure_capacity(void **ptr, size_t *capacity, size_t elemsize, size_t desired);
 
 #define CBUILD__ENSURE_CAPACITY(array, desired)        \
     cbuild__ensure_capacity((void **)(&((array).ptr)), \

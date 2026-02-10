@@ -9,18 +9,17 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
+#include <err.h>
 
 DEFINE_APPENDER_FUN(obj, cflags, const char *)
 
 cbuild_obj_t *cbuild_obj_create(const char *cfile, ...) {
     cbuild_obj_t *o = calloc(1, sizeof(*o));
     if (o == NULL)
-        goto error;
+        err(1, "calloc");
 
     o->base.type = CBUILD_TARGET_OBJECT;
     o->base.outpath = cbuild_changestrext(cfile, "o");
-    if (o->base.outpath == NULL)
-        goto error;
 
     o->src = cfile;
 
@@ -34,13 +33,8 @@ cbuild_obj_t *cbuild_obj_create(const char *cfile, ...) {
             va_end(vlist);
             return o;
         } else {
-            if (cbuild_obj_append_cflags(o, &flag, 1) < 0)
-                goto error;
+            cbuild_obj_append_cflags(o, &flag, 1);
         }
     };
-
-error:
-    free(o);
-    CBUILD_RET_ERR(CBUILD_EMALLOC, NULL);
 }
 

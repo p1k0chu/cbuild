@@ -36,8 +36,6 @@ int main(int argc, char **argv) {
     cbuild_executable_t *exe = cbuild_create_executable("program", o, o2, NULL);
 
     pid_t p = cbuild_target_compile((void *)exe);
-    if (p < 0)
-        errx(1, "p < 0");
     if (p > 0)
         waitpid(p, NULL, 0);
 }

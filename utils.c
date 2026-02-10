@@ -3,21 +3,20 @@
 
 #include "utils.h"
 
-#include "cbuild/err.h"
-
+#include <err.h>
 #include <stddef.h>
 #include <stdlib.h>
 
-int cbuild__ensure_capacity(void **ptr, size_t *capacity, size_t elemsize, size_t desired) {
+void cbuild__ensure_capacity(void **ptr, size_t *capacity, size_t elemsize, size_t desired) {
     if (desired <= *capacity)
-        return 0;
+        return;
 
     size_t newsize = desired * 2 + 1;
     void *p = realloc(*ptr, newsize * elemsize);
     if (p == NULL)
-        CBUILD_RET_ERR(CBUILD_EMALLOC, -1);
+        err(1, "realloc");
 
     *ptr = p;
     *capacity = newsize;
-    return 0;
+    return;
 }

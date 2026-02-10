@@ -15,14 +15,14 @@ enum pkg_config_what {
 /**
  * calls pkg-config, and splits the flags into tokens
  * (delim=space). writes address of the array of strings to RET, and
- * returns the number of tokens in that array. when fails, returns -1.
+ * returns the number of tokens in that array.
  *
  * when freeptr is not NULL, writes the address you can pass to free()
  * function to free the memory. this makes every string in ret
  * unusable. after this you also should free ret.
  */
-int cbuild_pkgconfig(char ***ret,
-                     enum pkg_config_what what,
-                     const char **libs,
-                     size_t nlibs,
-                     void **freeptr);
+size_t cbuild_pkgconfig(char ***ret,
+                        enum pkg_config_what what,
+                        const char **libs,
+                        size_t nlibs,
+                        void **freeptr);

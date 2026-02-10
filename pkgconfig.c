@@ -5,8 +5,6 @@
 
 #include "cbuild/pkgconfig.h"
 
-#include "utils.h"
-
 #include <assert.h>
 #include <err.h>
 #include <stdio.h>
@@ -14,14 +12,14 @@
 #include <string.h>
 #include <wait.h>
 
-static inline unsigned int char_count_str(const char *haystack, char hay);
+static inline size_t char_count_str(const char *haystack, char hay);
 static char *exec_pkg_config(char *flag, const char **libs, size_t nlibs);
 
-int cbuild_pkgconfig(char ***ret,
-                     enum pkg_config_what what,
-                     const char **libs,
-                     size_t nlibs,
-                     void **freeptr) {
+size_t cbuild_pkgconfig(char ***ret,
+                        enum pkg_config_what what,
+                        const char **libs,
+                        size_t nlibs,
+                        void **freeptr) {
     char *flag;
     switch (what) {
     case PKG_CONFIG_LIBS:
@@ -31,22 +29,19 @@ int cbuild_pkgconfig(char ***ret,
         flag = "--cflags";
         break;
     default:
-        CBUILD_RET_ERR(CBUILD_EINVAL, -1);
+        errx(1, "pkg_config_what value is invalid (not of enum)");
     }
     char *p = exec_pkg_config(flag, libs, nlibs);
-    if (p == NULL)
-        return -1;
 
-    const unsigned int bufsize = char_count_str(p, ' ') + 1;
+    const size_t bufsize = char_count_str(p, ' ') + 1;
 
     char **buf = malloc(bufsize * sizeof(*buf));
     if (buf == NULL) {
-        free(p);
-        CBUILD_RET_ERR(CBUILD_EMALLOC, -1);
+        err(1, "malloc");
     }
     buf[0] = strtok(p, " ");
 
-    unsigned int i;
+    size_t i;
     for (i = 1; i < bufsize; ++i) {
         char *t = strtok(NULL, " ");
         if (t == NULL)
@@ -56,7 +51,7 @@ int cbuild_pkgconfig(char ***ret,
     *ret = buf;
     if (freeptr != NULL)
         *freeptr = p;
-    return (int)i - 1;
+    return i - 1;
 }
 
 static char *exec_pkg_config(char *flag, const char **libs, size_t libs_n) {
@@ -66,7 +61,7 @@ static char *exec_pkg_config(char *flag, const char **libs, size_t libs_n) {
 
     pid_t cpid = fork();
     if (cpid < 0) {
-        CBUILD_RET_ERR(CBUILD_EFORK, NULL);
+        err(1, "fork");
     } else if (cpid > 0) {
         FILE *fpipe = fdopen(fds[0], "r");
         if (!fpipe)
@@ -123,8 +118,8 @@ static char *exec_pkg_config(char *flag, const char **libs, size_t libs_n) {
     err(1, "failed to exec pkg-config");
 }
 
-static inline unsigned int char_count_str(const char *haystack, char hay) {
-    unsigned int i = 0;
+static inline size_t char_count_str(const char *haystack, char hay) {
+    size_t i = 0;
     for (; *haystack; ++haystack)
         if (*haystack == hay)
             ++i;

@@ -9,7 +9,7 @@
 
 /**
  * Compiles the target. If theres nothing to be done, might return
- * zero. Returns -1 and sets cbuild_errno on errors
+ * zero.
  */
 pid_t cbuild_target_compile(cbuild_target_t *target);
 

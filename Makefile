@@ -5,7 +5,7 @@ CFLAGS += -Wall -Wextra -MMD -iquote ./include -std=gnu23	\
 	-Werror=implicit-int -Wconversion			\
 	-Werror=implicit-fallthrough
 
-SRCS := error.c mtime.c object.c utils.c target.c compile.c	\
+SRCS := mtime.c object.c utils.c target.c compile.c		\
 	compilemyself.c filename.c custom_target.c pkgconfig.c
 OUT_STATIC := libcbuild.a
 OUT_SHARED := libcbuild.so

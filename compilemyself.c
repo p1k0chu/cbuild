@@ -83,16 +83,16 @@ recompile:
     va_end(vlist);
 
     pid_t cpid = cbuild_target_compile((void *)exe);
-    if (cpid < 0)
-        err(EXIT_FAILURE, "fork");
-    int wstatus;
-    waitpid(cpid, &wstatus, 0);
-    if (!WIFEXITED(wstatus))
-        errx(EXIT_FAILURE, "self compilation exited abnormally");
+    if (cpid > 0) {
+        int wstatus;
+        waitpid(cpid, &wstatus, 0);
+        if (!WIFEXITED(wstatus))
+            errx(EXIT_FAILURE, "self compilation died to a signal");
 
-    int s = WEXITSTATUS(wstatus);
-    if (s != 0)
-        errx(EXIT_FAILURE, "self compilation exited with error code %d", s);
+        int s = WEXITSTATUS(wstatus);
+        if (s != 0)
+            errx(EXIT_FAILURE, "self compilation exited with error code %d", s);
+    }
 
     for (size_t i = 0; argv[i] != NULL; ++i) {
         printf("%s ", argv[i]);

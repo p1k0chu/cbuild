@@ -4,6 +4,7 @@
 #include "mtime.h"
 #include "target_private.h"
 
+#include <err.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -12,7 +13,7 @@ cbuild_custom_target_t *cbuild_create_custom_target(const char *outpath,
                                                     cbuild_custom_target_func func) {
     cbuild_custom_target_t *t = calloc(1, sizeof(*t));
     if (t == NULL)
-        CBUILD_RET_ERR(CBUILD_EMALLOC, NULL);
+        err(1, "calloc");
 
     t->base.outpath = outpath;
     t->base.type = CBUILD_TARGET_CUSTOM;
@@ -25,7 +26,7 @@ cbuild_custom_target_t *cbuild_create_custom_target(const char *outpath,
 pid_t cbuild__custom_target_compile(cbuild_custom_target_t *target) {
     pid_t cpid = fork();
     if (cpid < 0) {
-        CBUILD_RET_ERR(CBUILD_EFORK, -1);
+        err(1, "fork");
     } else if (cpid > 0) {
         return cpid;
     }

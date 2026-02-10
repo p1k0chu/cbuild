@@ -20,9 +20,9 @@ typedef cbuild_link_target_t cbuild_staticlib_t;
  */
 cbuild_link_target_t *cbuild_link_target_create(enum cbuild_target_type, const char *name, ...);
 
-int cbuild_link_target_append_ldflags(cbuild_link_target_t *,
-                                      const char **ldflags,
-                                      size_t nldflags);
+void cbuild_link_target_append_ldflags(cbuild_link_target_t *,
+                                       const char **ldflags,
+                                       size_t nldflags);
 
 /* Macros to create each type of link_target */
 
