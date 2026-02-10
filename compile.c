@@ -119,7 +119,9 @@ static pid_t cbuild_obj_compile(cbuild_obj_t *obj, int flags) {
     cmd[i++] = "gcc";
 
     for (size_t j = 0; j < obj->cflags.len; ++j) {
-        cmd[i++] = (char *)obj->cflags.ptr[j];
+        char *s = (char *)obj->cflags.ptr[j];
+        if (s)
+            cmd[i++] = s;
     }
 
     cmd[i++] = "-c";
@@ -196,7 +198,9 @@ static pid_t cbuild_obj_compile(cbuild_obj_t *obj, int flags) {
         cmd[i++] = "-shared";
 
     for (size_t j = 0; j < target->ldflags.len; ++j) {
-        cmd[i++] = (char *)target->ldflags.ptr[j];
+        char *s = (char *)target->ldflags.ptr[j];
+        if (s)
+            cmd[i++] = s;
     }
 
     cmd[i++] = "-o";
