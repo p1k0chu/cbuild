@@ -2,7 +2,7 @@
 // It is public domain.
 // SPDX-License-Identifier: 0BSD
 
-#include "custom_target_ex.h"
+#include "build.h"
 
 #include <cbuild.h>
 #include <err.h>
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
     cbuild_target_append_deps((void *)o, &t, 1);
     cbuild_target_append_deps((void *)o2, &t2, 1);
 
-    cbuild_executable_t *exe = cbuild_create_executable("custom_target_example_exe", o, o2, NULL);
+    cbuild_executable_t *exe = cbuild_create_executable("program", o, o2, NULL);
 
     pid_t p = cbuild_target_compile((void *)exe);
     if (p < 0)
