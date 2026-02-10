@@ -41,8 +41,7 @@ size_t cbuild_pkgconfig(char ***ret,
     }
     buf[0] = strtok(p, " ");
 
-    size_t i;
-    for (i = 1; i < bufsize; ++i) {
+    for (size_t i = 1; i < bufsize; ++i) {
         char *t = strtok(NULL, " ");
         if (t == NULL)
             break;
@@ -51,7 +50,7 @@ size_t cbuild_pkgconfig(char ***ret,
     *ret = buf;
     if (freeptr != NULL)
         *freeptr = p;
-    return i - 1;
+    return bufsize;
 }
 
 static char *exec_pkg_config(char *flag, const char **libs, size_t libs_n) {
