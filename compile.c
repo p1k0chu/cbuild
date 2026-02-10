@@ -27,12 +27,14 @@ static pid_t cbuild_obj_compile(cbuild_obj_t *obj, int flags);
 static pid_t cbuild_link_target_compile(cbuild_link_target_t *target, int flags);
 
 pid_t cbuild_target_compile(cbuild_target_t *target, int flags) {
-    if (flags & CBUILD_COMPILE_DRYRUN) {
-        if (target->flags & CBUILD_TARGET_ISCOMPILED)
+    if (target->flags & CBUILD_TARGET_ISCOMPILED) {
+        if (flags & CBUILD_COMPILE_DRYRUN) {
             return -69;
+        } else if (flags & CBUILD_COMPILE_FORCE) {
+            return 0;
+        }
     }
     char updateddeps = flags & CBUILD_COMPILE_FORCE;
-    target->flags |= CBUILD_TARGET_ISCOMPILED;
 
     for (size_t i = 0; i < target->deps.len; ++i) {
         cbuild_target_t *obj = target->deps.ptr[i];
@@ -63,11 +65,13 @@ pid_t cbuild_target_compile(cbuild_target_t *target, int flags) {
     case CBUILD_TARGET_SHAREDLIB:
     case CBUILD_TARGET_STATICLIB:
         if (updateddeps) {
+            target->flags |= CBUILD_TARGET_ISCOMPILED;
             return cbuild_link_target_compile((cbuild_link_target_t *)target, flags);
         }
         break;
     case CBUILD_TARGET_OBJECT:
         if (updateddeps || cbuild__mtimecmp(target->outpath, ((cbuild_obj_t *)target)->src) < 0) {
+            target->flags |= CBUILD_TARGET_ISCOMPILED;
             return cbuild_obj_compile((cbuild_obj_t *)target, flags);
         }
         break;
@@ -75,6 +79,7 @@ pid_t cbuild_target_compile(cbuild_target_t *target, int flags) {
         cbuild_custom_target_t *ct = (void *)target;
         if (updateddeps ||
             (ct->inpath == NULL || cbuild__mtimecmp(target->outpath, ct->inpath) < 0)) {
+            target->flags |= CBUILD_TARGET_ISCOMPILED;
             return cbuild__custom_target_compile((cbuild_custom_target_t *)target, flags);
         }
         break;

@@ -12,8 +12,7 @@ DEFINE_ARRAY(ldflags, const char *);
 DEFINE_ARRAY(cflags, const char *);
 
 // flags:
-/// Only used for dry runs to keep track of targets. Real compilations
-/// ignore this (but still set)
+// only used when either DRYRUN or FORCE is on. always set tho
 #define CBUILD_TARGET_ISCOMPILED 1
 
 struct cbuild_target {
