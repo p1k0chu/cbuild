@@ -1,7 +1,8 @@
 #include "build.h"
 
+#include "cmdline_parser.h"
+
 #include <cbuild.h>
-#include <cbuild/cmdline_parser.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

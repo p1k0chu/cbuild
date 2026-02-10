@@ -23,5 +23,3 @@
 #define EXPAND(x) x
 #define CMDLINE_OPT_GET_MACRO(_1, _2, _3, name, ...) name
 #define CMDLINE_OPT(...) EXPAND(CMDLINE_OPT_GET_MACRO(__VA_ARGS__, CMDLINE_OPT2, CMDLINE_OPT1)(__VA_ARGS__))
-
-
