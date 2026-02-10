@@ -11,7 +11,7 @@ This library is licensed with LGPL-3.0-or-later. see `LICENSE` and
 
 # Usage
 
-TLDR: full example (without error handling) at the bottom. also see
+TLDR: full example at the bottom. also see
 `build.c` for example usage. also see `examples/` directory for some
 more examples. (those are more up to date then `readme` because they
 actually get compiled to see if they still work)
@@ -29,11 +29,11 @@ Then you need to use `-Lpath/to/lib`, `-lcbuild` and
 To create an object file, you can use `cbuild_obj_create(source,
 cflags..., NULL)`. it takes a path to c file and `const char *`
 varargs to be used as cflags. varargs in all of the library functions
-need to end in NULL. it returns NULL on errors, see each function's
-documentation for their error behaviour. most return either NULL or -1
-(like syscalls, if return < 0, then its error), and set `cbuild_errno`
-value (of type `enum cbuild_errno`). A function that failed will never
-set `cbuild_errno` to 0.
+need to end in NULL.
+
+When a function in this lib fails, it prints the error and
+exit()s. This allows you to write shorter and prettier code, at the
+price of... no price?
 
 ```c
 #include <cbuild/cbuild.h>
@@ -88,13 +88,11 @@ disables them all.
 
 It returns child process' pid, which you should `wait` for. (otherwise
 the parent exists too early and kills its children). It may also
-return 0 if the target is up to date, or -1 if an error occurred.
+return 0 if the target is up to date.
 
 ```c
 // void* cast is simply shorter than cbuild_target_t*
 pid_t cpid = cbuild_target_compile((void *)foo, 0);
-if (cpid < 0)
-	exit(1);
 if (cpid > 0)
 	waitpid(cpid, NULL, 0);
 ```
@@ -140,7 +138,7 @@ cbuild_recompile_myself(__FILE__, argv, 0, "-Wall", CBUILD_SELFCOMPILE_FLAGS, NU
 
 ---
 
-Final program example (all error handling omitted for brevity):
+Final program example:
 
 ```c
 #include "build.h"
