@@ -1,6 +1,7 @@
 #include "build.h"
 
 #include <cbuild.h>
+#include <cbuild/cmdline_parser.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,18 +31,14 @@ int main(int argc, char **argv) {
     char willcompileself = 1;
     int flags = 0;
     prog = argv[0];
-    for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "-s") == 0)
-            willcompileself = 0;
-        else if (strcmp(argv[i], "-S") == 0)
-            willcompileself |= 2;
-        else if (strcmp(argv[i], "-n") == 0)
-            flags |= CBUILD_COMPILE_DRYRUN;
-        else if (strcmp(argv[i], "-B") == 0)
-            flags |= CBUILD_COMPILE_FORCE;
-        else if (strcmp(argv[i], "-h") == 0)
-            print_help();
-    }
+
+    CMDLINE_OPTS_BEGIN;
+    CMDLINE_OPT("-s", willcompileself = 0);
+    CMDLINE_OPT("-S", willcompileself |= 2);
+    CMDLINE_OPT("-n", flags |= CBUILD_COMPILE_DRYRUN);
+    CMDLINE_OPT("-B", flags |= CBUILD_COMPILE_FORCE);
+    CMDLINE_OPT("-h", print_help());
+    CMDLINE_OPTS_END;
 
     if (willcompileself) {
         cbuild_recompile_myself(__FILE__,
@@ -96,7 +93,7 @@ int main(int argc, char **argv) {
         "-B - force recompile\n"
         "-s - do not recompile myself\n"
         "-S - only recompile myself\n"
-        "-h - show help",
+        "-h - show help\n",
         prog);
     exit(0);
 }
