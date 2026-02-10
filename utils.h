@@ -12,15 +12,15 @@
         size_t capacity;         \
     };
 
-#define DEFINE_APPENDER_FUN(structname, name, type)                        \
+#define DEFINE_APPENDER_FUN(structname, name, type)                         \
     void cbuild_##structname##_append_##name(struct cbuild_##structname *o, \
-                                            type *elements,                \
-                                            size_t nelements) {            \
-        CBUILD__ENSURE_CAPACITY(o->name, o->name.len + nelements);         \
-                                                                           \
-        for (size_t i = 0; i < nelements; ++i)                             \
-            o->name.ptr[o->name.len++] = elements[i];                      \
-        return;                                                          \
+                                             type *elements,                \
+                                             size_t nelements) {            \
+        CBUILD__ENSURE_CAPACITY(o->name, o->name.len + nelements);          \
+                                                                            \
+        for (size_t i = 0; i < nelements; ++i)                              \
+            o->name.ptr[o->name.len++] = elements[i];                       \
+        return;                                                             \
     }
 
 void cbuild__ensure_capacity(void **ptr, size_t *capacity, size_t elemsize, size_t desired);

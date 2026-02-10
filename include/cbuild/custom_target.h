@@ -5,7 +5,10 @@
 
 typedef struct cbuild_custom_target cbuild_custom_target_t;
 
-typedef void (*cbuild_custom_target_func)(const char *outpath, const char *inpath, int flags, void*data);
+typedef void (*cbuild_custom_target_func)(const char *outpath,
+                                          const char *inpath,
+                                          int flags,
+                                          void *data);
 
 /**
  * Define a custom target, which depends on file INPATH and produces

@@ -7,9 +7,9 @@
 #include "target_private.h"
 #include "utils.h"
 
+#include <err.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <err.h>
 
 DEFINE_APPENDER_FUN(obj, cflags, const char *)
 
