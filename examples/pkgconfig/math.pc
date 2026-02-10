@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: 0BSD
+
+Name: Math
+Description: Math
+Version: 0.1.0
+Libs: -lm
+Cflags: -D__USE_MISC

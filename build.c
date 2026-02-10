@@ -15,6 +15,7 @@ const char *srcs[] = {
     "target.c",
     "utils.c",
     "custom_target.c",
+    "pkgconfig.c",
 };
 
 #define COMMON_CFLAGS                                                                 \
