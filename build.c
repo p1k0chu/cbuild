@@ -3,6 +3,7 @@
 #include "cmdline_parser.h"
 
 #include <cbuild.h>
+#include <err.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,16 +36,25 @@ int main(int argc, char **argv) {
 
     CMDLINE_OPTS_BEGIN;
     CMDLINE_OPT("-s", willcompileself = 0);
-    CMDLINE_OPT("-S", willcompileself |= 2);
+    CMDLINE_OPT("-S", willcompileself = 2);
     CMDLINE_OPT("-n", flags |= CBUILD_COMPILE_DRYRUN);
     CMDLINE_OPT("-B", flags |= CBUILD_COMPILE_FORCE);
     CMDLINE_OPT("-h", print_help());
     CMDLINE_OPTS_END;
 
+    // forced self compilation leads to problems, so the library
+    // itself exits when it compiles itself with force. this condition
+    // will disable force self compilation unless you pass -S.
+    int selfflags = flags;
+    if (flags & CBUILD_COMPILE_FORCE && willcompileself == 1) {
+        warnx("got -B without -S: self compilation wont be forced");
+        selfflags &= ~CBUILD_COMPILE_FORCE;
+    }
+
     if (willcompileself) {
         cbuild_recompile_myself(__FILE__,
                                 argv,
-                                flags,
+                                selfflags,
                                 "-Wall",
                                 "-Wextra",
                                 CBUILD_SELFCOMPILE_FLAGS,

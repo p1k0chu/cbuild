@@ -49,20 +49,22 @@ void cbuild_recompile_myself(const char *sourcepath, char **argv, int flags, ...
         buf[nb] = 0;
     }
 
-    struct stat stbin;
-    if (stat(buf, &stbin) < 0) {
-        if (errno == ENOENT)
-            goto recompile;
-        else
-            err(EXIT_FAILURE, "couldn't stat binary /proc/self/exe is pointing at: %s", buf);
+    if (!(flags & CBUILD_COMPILE_FORCE)) {
+        struct stat stbin;
+        if (stat(buf, &stbin) < 0) {
+            if (errno == ENOENT)
+                goto recompile;
+            else
+                err(EXIT_FAILURE, "couldn't stat binary /proc/self/exe is pointing at: %s", buf);
+        }
+
+        long delta = stbin.st_mtim.tv_sec - stsrc.st_mtim.tv_sec;
+        if (delta == 0)
+            delta = stbin.st_mtim.tv_nsec - stsrc.st_mtim.tv_nsec;
+
+        if (delta >= 0)
+            return;
     }
-
-    long delta = stbin.st_mtim.tv_sec - stsrc.st_mtim.tv_sec;
-    if (delta == 0)
-        delta = stbin.st_mtim.tv_nsec - stsrc.st_mtim.tv_nsec;
-
-    if (delta >= 0)
-        return;
 
 recompile:
 
@@ -93,6 +95,12 @@ recompile:
         if (s != 0)
             errx(EXIT_FAILURE, "self compilation exited with error code %d", s);
     }
+
+    // when compiling yourself with force, you will enter an infinite
+    // loop of self compilation and then self exec'ing. i don't see a
+    // good way to prevent this within the library other than this
+    if (flags & CBUILD_COMPILE_FORCE)
+        errx(0, "Recompiled myself with force, quitting.");
 
     for (size_t i = 0; argv[i] != NULL; ++i) {
         printf("%s ", argv[i]);
