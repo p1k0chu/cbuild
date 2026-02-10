@@ -12,7 +12,7 @@
 #include <wait.h>
 
 int main(int argc, char *argv[]) {
-    cbuild_recompile_myself(__FILE__, argv, CBUILD_SELFCOMPILE_FLAGS, NULL);
+    cbuild_recompile_myself(__FILE__, argv, 0, CBUILD_SELFCOMPILE_FLAGS, NULL);
 
     // use math.pc in this example's directory (using any other
     // library isn't guaranteed to work on all linuxes)
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     cbuild_executable_t *exe = cbuild_create_executable("program", main, NULL);
     cbuild_executable_append_ldflags(exe, (const char **)ldflags, nldflags);
 
-    pid_t cpid = cbuild_target_compile((void *)exe);
+    pid_t cpid = cbuild_target_compile((void *)exe, 0);
     if (cpid > 0) {
         int ws;
         waitpid(cpid, &ws, 0);

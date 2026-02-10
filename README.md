@@ -13,7 +13,8 @@ This library is licensed with LGPL-3.0-or-later. see `LICENSE` and
 
 TLDR: full example (without error handling) at the bottom. also see
 `build.c` for example usage. also see `examples/` directory for some
-more examples.
+more examples. (those are more up to date then `readme` because they
+actually get compiled to see if they still work)
 
 First, you need to compile this library as a static lib. Clone the
 repository and run `make`, this creates a `libcbuild.a` file in
@@ -52,9 +53,9 @@ char *someflags[] = {"-std=c99", "-pedantic"};
 cbuild_obj_append_cflags(foo_obj, someflags, 2);
 ```
 
-You could compile it like that via `cbuild_obj_compile`, but you
-can also create an executable using `cbuild_target_create`. it takes
-the type of the target, output filename and a vararg of `cbuild_target_t *`'s.
+You can also create an executable using `cbuild_target_create`. it
+takes the type of the target, output filename and a vararg of
+`cbuild_target_t *`'s.
 
 There's multiple target types, but they all share the same base:
 `cbuild_target_t`. It should be always safe to cast the specific types
@@ -82,6 +83,8 @@ cbuild_executable_append_ldflags(foo, ldlibs, sizeof(ldlibs) / sizeof(*ldlibs));
 Now, to compile, use `cbuild_target_compile`. its going to compare the
 timestamps of all the required files (if foo.c > foo.o, compile foo.o,
 then if foo.o > foo, compile foo). All commands are printed to stdout.
+It takes compile flags, described in header `cbuild/compile.h`. 0
+disables them all.
 
 It returns child process' pid, which you should `wait` for. (otherwise
 the parent exists too early and kills its children). It may also
@@ -89,7 +92,7 @@ return 0 if the target is up to date, or -1 if an error occurred.
 
 ```c
 // void* cast is simply shorter than cbuild_target_t*
-pid_t cpid = cbuild_target_compile((void *)foo);
+pid_t cpid = cbuild_target_compile((void *)foo, 0);
 if (cpid < 0)
 	exit(1);
 if (cpid > 0)
@@ -109,12 +112,12 @@ Now, if you run build, it should work.
 It can also recompile itself, when its source file is newer than
 executable. To do so, you need to call `cbuild_recompile_myself` on
 the top of your `main(...)`. It also takes cflags and ldflags combined
-as varargs. It needs, at minimum, flags to link against `cbuild`
+as varargs, and compile flags. It needs, at minimum, flags to link against `cbuild`
 library (just like in the command above). You can pass any other
 flags, they should work.
 
 ```c
-cbuild_recompile_myself(__FILE__, argv, "-Llib/cbuild", "-lcbuild", "-Ilib/cbuild/include", NULL);
+cbuild_recompile_myself(__FILE__, argv, 0, "-Llib/cbuild", "-lcbuild", "-Ilib/cbuild/include", NULL);
 ```
 
 if it decides to recompile itself, its going to print the commands
@@ -132,7 +135,7 @@ a header with a macro `CBUILD_SELFCOMPILE_FLAGS`, which you should
 pass to `cbuild_recompile_myself` like this:
 
 ```c
-cbuild_recompile_myself(__FILE__, argv, "-Wall", CBUILD_SELFCOMPILE_FLAGS, NULL);
+cbuild_recompile_myself(__FILE__, argv, 0, "-Wall", CBUILD_SELFCOMPILE_FLAGS, NULL);
 ```
 
 ---
@@ -148,13 +151,14 @@ Final program example (all error handling omitted for brevity):
 int main(int argc, char **argv) {
     cbuild_recompile_myself(__FILE__,
                             argv,
+							0,
 							CBUILD_SELFCOMPILE_FLAGS,
                             NULL);
 
     cbuild_obj_t *foo_obj = cbuild_obj_create("foo.c", "-std=gnu23", "-Wall", "-Wextra", NULL);
     cbuild_executable_t *foo = cbuild_executable_create("foo", foo_obj, NULL);
 
-	pid_t cpid = cbuild_target_compile((void *)foo);
+	pid_t cpid = cbuild_target_compile((void *)foo, 0);
 	if (cpid > 0)
 		waitpid(cpid, NULL, 0);
 }

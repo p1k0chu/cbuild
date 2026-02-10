@@ -2,6 +2,7 @@
 
 #include <cbuild.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <wait.h>
 
@@ -21,8 +22,38 @@ const char *srcs[] = {
     "-Wall", "-Wextra", "-iquote", "./include", "-std=gnu23", "-Werror=implicit-int", \
         "-Wconversion", "-Werror=implicit-fallthrough"
 
-int main(int argc __attribute__((unused)), char **argv) {
-    cbuild_recompile_myself(__FILE__, argv, "-Wall", "-Wextra", CBUILD_SELFCOMPILE_FLAGS, NULL);
+[[noreturn]] static void print_help();
+
+char *prog;
+
+int main(int argc, char **argv) {
+    char willcompileself = 1;
+    int flags = 0;
+    prog = argv[0];
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "-s") == 0)
+            willcompileself = 0;
+        else if (strcmp(argv[i], "-S") == 0)
+            willcompileself |= 2;
+        else if (strcmp(argv[i], "-n") == 0)
+            flags |= CBUILD_COMPILE_DRYRUN;
+        else if (strcmp(argv[i], "-B") == 0)
+            flags |= CBUILD_COMPILE_FORCE;
+        else if (strcmp(argv[i], "-h") == 0)
+            print_help();
+    }
+
+    if (willcompileself) {
+        cbuild_recompile_myself(__FILE__,
+                                argv,
+                                flags,
+                                "-Wall",
+                                "-Wextra",
+                                CBUILD_SELFCOMPILE_FLAGS,
+                                NULL);
+        if (willcompileself > 1)
+            return 0;
+    }
 
     cbuild_staticlib_t *liba = cbuild_create_staticlib("libcbuild.a", NULL);
     cbuild_sharedlib_t *libso = cbuild_create_sharedlib("libcbuild.so", NULL);
@@ -38,7 +69,7 @@ int main(int argc __attribute__((unused)), char **argv) {
 
     int ws;
     int status = 0;
-    pid_t cpid = cbuild_target_compile((void *)liba);
+    pid_t cpid = cbuild_target_compile((void *)liba, flags);
     if (cpid > 0) {
         waitpid(cpid, &ws, 0);
         if (!WIFEXITED(ws))
@@ -46,7 +77,7 @@ int main(int argc __attribute__((unused)), char **argv) {
         status = WEXITSTATUS(ws);
     }
 
-    cpid = cbuild_target_compile((void *)libso);
+    cpid = cbuild_target_compile((void *)libso, flags);
     if (cpid > 0) {
         waitpid(cpid, &ws, 0);
         if (!WIFEXITED(ws))
@@ -55,4 +86,17 @@ int main(int argc __attribute__((unused)), char **argv) {
     }
 
     return status;
+}
+
+[[noreturn]] static void print_help() {
+    printf(
+        "Usage: %s [OPTIONS]\n\n"
+        "Options:\n"
+        "-n - dry run\n"
+        "-B - force recompile\n"
+        "-s - do not recompile myself\n"
+        "-S - only recompile myself\n"
+        "-h - show help",
+        prog);
+    exit(0);
 }

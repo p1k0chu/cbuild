@@ -11,7 +11,13 @@ DEFINE_ARRAY(target_array, cbuild_target_t *);
 DEFINE_ARRAY(ldflags, const char *);
 DEFINE_ARRAY(cflags, const char *);
 
+// flags:
+/// Only used for dry runs to keep track of targets. Real compilations
+/// ignore this (but still set)
+#define CBUILD_TARGET_ISCOMPILED 1
+
 struct cbuild_target {
+    int flags;
     enum cbuild_target_type type;
 
     const char *outpath;
@@ -37,6 +43,7 @@ struct cbuild_custom_target {
 
     const char *inpath;
     cbuild_custom_target_func func;
+    void *data;
 };
 
-pid_t cbuild__custom_target_compile(cbuild_custom_target_t *target);
+pid_t cbuild__custom_target_compile(cbuild_custom_target_t *target, int flags);

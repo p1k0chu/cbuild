@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <wait.h>
 
-void cbuild_recompile_myself(const char *sourcepath, char **argv, ...) {
+void cbuild_recompile_myself(const char *sourcepath, char **argv, int flags, ...) {
     struct stat stselflink, stsrc;
     if (lstat("/proc/self/exe", &stselflink) < 0)
         err(EXIT_FAILURE, "can't stat /proc/self/exe");
@@ -70,7 +70,7 @@ recompile:
     cbuild_executable_t *exe = cbuild_create_executable(buf, obj, NULL);
 
     va_list vlist;
-    va_start(vlist, argv);
+    va_start(vlist, flags);
     const char *p;
     for (;;) {
         p = va_arg(vlist, const char *);
@@ -82,7 +82,7 @@ recompile:
     }
     va_end(vlist);
 
-    pid_t cpid = cbuild_target_compile((void *)exe);
+    pid_t cpid = cbuild_target_compile((void *)exe, flags);
     if (cpid > 0) {
         int wstatus;
         waitpid(cpid, &wstatus, 0);
@@ -98,6 +98,9 @@ recompile:
         printf("%s ", argv[i]);
     }
     putchar('\n');
+
+    if (flags & CBUILD_COMPILE_DRYRUN)
+        return;
 
     execv(buf, argv);
     err(EXIT_FAILURE, "execv: %s", buf);

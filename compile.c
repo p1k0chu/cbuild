@@ -1,6 +1,8 @@
 // Copyright (C) 2026 p1k0chu
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
+#include "cbuild/compile.h"
+
 #include "cbuild/link_target.h"
 #include "mtime.h"
 #include "target_private.h"
@@ -11,8 +13,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-[[noreturn]] static void run_ar(cbuild_link_target_t *target);
-[[noreturn]] static void run_gcc(cbuild_link_target_t *target);
+[[noreturn]] static void run_ar(cbuild_link_target_t *target, int flags);
+[[noreturn]] static void run_gcc(cbuild_link_target_t *target, int flags);
 
 static void print_cmd(char **cmd, size_t len) {
     for (size_t i = 0; i < len; ++i) {
@@ -21,18 +23,26 @@ static void print_cmd(char **cmd, size_t len) {
     putchar('\n');
 }
 
-static pid_t cbuild_obj_compile(cbuild_obj_t *obj);
-static pid_t cbuild_link_target_compile(cbuild_link_target_t *target);
+static pid_t cbuild_obj_compile(cbuild_obj_t *obj, int flags);
+static pid_t cbuild_link_target_compile(cbuild_link_target_t *target, int flags);
 
-pid_t cbuild_target_compile(cbuild_target_t *target) {
-    char updateddeps = 0;
+pid_t cbuild_target_compile(cbuild_target_t *target, int flags) {
+    if (flags & CBUILD_COMPILE_DRYRUN) {
+        if (target->flags & CBUILD_TARGET_ISCOMPILED)
+            return -69;
+    }
+    char updateddeps = flags & CBUILD_COMPILE_FORCE;
+    target->flags |= CBUILD_TARGET_ISCOMPILED;
 
     for (size_t i = 0; i < target->deps.len; ++i) {
         cbuild_target_t *obj = target->deps.ptr[i];
-        pid_t child = cbuild_target_compile(obj);
-        if (child < 0)
+        pid_t child = cbuild_target_compile(obj, flags);
+        if (child == -69 && (flags & CBUILD_COMPILE_DRYRUN)) {
+            updateddeps |= 1;
+        } else if (child < 0)
             err(EXIT_FAILURE, "fork");
-        if (child > 0) {
+        else if (child > 0) {
+            updateddeps |= 1;
             int wstatus;
             waitpid(child, &wstatus, 0);
 
@@ -53,19 +63,19 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
     case CBUILD_TARGET_SHAREDLIB:
     case CBUILD_TARGET_STATICLIB:
         if (updateddeps) {
-            return cbuild_link_target_compile((cbuild_link_target_t *)target);
+            return cbuild_link_target_compile((cbuild_link_target_t *)target, flags);
         }
         break;
     case CBUILD_TARGET_OBJECT:
         if (updateddeps || cbuild__mtimecmp(target->outpath, ((cbuild_obj_t *)target)->src) < 0) {
-            return cbuild_obj_compile((cbuild_obj_t *)target);
+            return cbuild_obj_compile((cbuild_obj_t *)target, flags);
         }
         break;
     case CBUILD_TARGET_CUSTOM:
         cbuild_custom_target_t *ct = (void *)target;
         if (updateddeps ||
             (ct->inpath == NULL || cbuild__mtimecmp(target->outpath, ct->inpath) < 0)) {
-            return cbuild__custom_target_compile((cbuild_custom_target_t *)target);
+            return cbuild__custom_target_compile((cbuild_custom_target_t *)target, flags);
         }
         break;
     default:
@@ -74,7 +84,7 @@ pid_t cbuild_target_compile(cbuild_target_t *target) {
     return 0;
 }
 
-static pid_t cbuild_link_target_compile(cbuild_link_target_t *target) {
+static pid_t cbuild_link_target_compile(cbuild_link_target_t *target, int flags) {
     pid_t cpid = fork();
     if (cpid < 0) {
         err(1, "fork");
@@ -84,13 +94,13 @@ static pid_t cbuild_link_target_compile(cbuild_link_target_t *target) {
 
     switch (target->base.type) {
     case CBUILD_TARGET_STATICLIB:
-        run_ar(target);
+        run_ar(target, flags);
     default:
-        run_gcc(target);
+        run_gcc(target, flags);
     }
 }
 
-static pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
+static pid_t cbuild_obj_compile(cbuild_obj_t *obj, int flags) {
     pid_t cpid = fork();
     if (cpid < 0) {
         err(1, "fork");
@@ -115,11 +125,14 @@ static pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
 
     print_cmd(cmd, i - 1);
 
+    if (flags & CBUILD_COMPILE_DRYRUN)
+        exit(0);
+
     execvp("gcc", cmd);
     err(EXIT_FAILURE, "child failed to exec");
 }
 
-[[noreturn]] static void run_gcc(cbuild_link_target_t *target) {
+[[noreturn]] static void run_gcc(cbuild_link_target_t *target, int flags) {
     const bool isshared = target->base.type == CBUILD_TARGET_SHAREDLIB;
     const size_t n = (isshared ? 5 : 4) + target->ldflags.len + target->base.deps.len;
     char *cmd[n];
@@ -187,11 +200,14 @@ static pid_t cbuild_obj_compile(cbuild_obj_t *obj) {
 
     print_cmd(cmd, i - 1);
 
+    if (flags & CBUILD_COMPILE_DRYRUN)
+        exit(0);
+
     execvp("gcc", cmd);
     err(EXIT_FAILURE, "failed to exec gcc");
 }
 
-static void run_ar(cbuild_link_target_t *target) {
+static void run_ar(cbuild_link_target_t *target, int flags) {
     char *cmd[4 + target->base.deps.len];
 
     cmd[0] = "ar";
@@ -208,6 +224,9 @@ static void run_ar(cbuild_link_target_t *target) {
     cmd[i++] = NULL;
 
     print_cmd(cmd, i - 1);
+
+    if (flags & CBUILD_COMPILE_DRYRUN)
+        exit(0);
 
     execvp("ar", cmd);
     err(EXIT_FAILURE, "failed to exec ar");

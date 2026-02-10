@@ -10,7 +10,8 @@
 
 cbuild_custom_target_t *cbuild_create_custom_target(const char *outpath,
                                                     const char *inpath,
-                                                    cbuild_custom_target_func func) {
+                                                    cbuild_custom_target_func func,
+                                                    void *data) {
     cbuild_custom_target_t *t = calloc(1, sizeof(*t));
     if (t == NULL)
         err(1, "calloc");
@@ -19,11 +20,12 @@ cbuild_custom_target_t *cbuild_create_custom_target(const char *outpath,
     t->base.type = CBUILD_TARGET_CUSTOM;
     t->inpath = inpath;
     t->func = func;
+    t->data = data;
 
     return t;
 }
 
-pid_t cbuild__custom_target_compile(cbuild_custom_target_t *target) {
+pid_t cbuild__custom_target_compile(cbuild_custom_target_t *target, int flags) {
     pid_t cpid = fork();
     if (cpid < 0) {
         err(1, "fork");
@@ -31,7 +33,7 @@ pid_t cbuild__custom_target_compile(cbuild_custom_target_t *target) {
         return cpid;
     }
 
-    target->func(target->base.outpath, target->inpath);
+    target->func(target->base.outpath, target->inpath, flags, target->data);
     exit(0);
 }
 
